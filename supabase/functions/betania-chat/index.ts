@@ -44,8 +44,9 @@ serve(async (req) => {
     console.log('[BetanIA Chat] Received message:', message);
     console.log('[BetanIA Chat] Context:', context);
 
-    // Fetch relevant sports data based on message content
-    const sportsData = await fetchRelevantSportsData(message, apisportsKey, supabase);
+    // Fetch relevant sports data based on message content and UI context
+    const sportsData = await fetchRelevantSportsData(message, apisportsKey, supabase, context);
+    
     
     // Prepare system prompt with sports data context
     const systemPrompt = createBetanIASystemPrompt(sportsData);
@@ -124,13 +125,15 @@ serve(async (req) => {
   }
 });
 
-async function fetchRelevantSportsData(message: string, apiKey: string | undefined, supabase: any): Promise<SportsDataContext> {
+async function fetchRelevantSportsData(message: string, apiKey: string | undefined, supabase: any, uiContext?: any): Promise<SportsDataContext> {
   const lowerMessage = message.toLowerCase();
   const context: SportsDataContext = {};
 
   try {
     // Determine season dynamically
     const currentSeason = new Date().getFullYear();
+    const leagueId = typeof uiContext?.selectedLeague === 'number' ? uiContext.selectedLeague : 71;
+    const teamId = typeof uiContext?.selectedTeam === 'number' ? uiContext.selectedTeam : undefined;
 
     // Fetch leagues data for Brazilian competitions
     if (lowerMessage.includes('brasil') || lowerMessage.includes('serie') || lowerMessage.includes('libertadores')) {
@@ -142,27 +145,25 @@ async function fetchRelevantSportsData(message: string, apiKey: string | undefin
     const mentionedTeam = teams.find(team => lowerMessage.includes(team));
     
     if (mentionedTeam || lowerMessage.includes('time')) {
-      context.teams = await fetchApiSportsData('teams', { league: 71, season: currentSeason }, apiKey, supabase);
+      context.teams = await fetchApiSportsData('teams', { league: leagueId, season: currentSeason }, apiKey, supabase);
     }
 
     // Fetch fixtures for today, next games, etc.
     if (lowerMessage.includes('jogo') || lowerMessage.includes('próximo') || lowerMessage.includes('hoje')) {
       const today = new Date().toISOString().split('T')[0];
-      context.fixtures = await fetchApiSportsData('fixtures', { 
-        league: 71, 
-        season: currentSeason,
-        date: today
-      }, apiKey, supabase);
+      const fixtureParams: any = { league: leagueId, season: currentSeason, date: today };
+      if (teamId) fixtureParams.team = teamId;
+      context.fixtures = await fetchApiSportsData('fixtures', fixtureParams, apiKey, supabase);
     }
 
   // Fetch odds if mentioned
   if (lowerMessage.includes('odd')) {
-    context.odds = await fetchApiSportsData('odds-pre', { league: 71, season: currentSeason }, apiKey, supabase);
+    context.odds = await fetchApiSportsData('odds-pre', { league: leagueId, season: currentSeason }, apiKey, supabase);
   }
 
   // Fetch top scorers when relevant
   if (lowerMessage.includes('artilheiro') || lowerMessage.includes('artilheiros') || lowerMessage.includes('gols')) {
-    context.topScorers = await fetchApiSportsData('topscorers', { league: 71, season: currentSeason }, apiKey, supabase);
+    context.topScorers = await fetchApiSportsData('topscorers', { league: leagueId, season: currentSeason }, apiKey, supabase);
   }
 
   } catch (error) {
