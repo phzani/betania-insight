@@ -2,3 +2,6 @@ project_id = "skeauyjradscjgfebkqa"
 
 [functions.api-sports]
 verify_jwt = false
+
+[functions.betania-chat]
+verify_jwt = false

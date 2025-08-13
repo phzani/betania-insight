@@ -1,7 +1,7 @@
 import React from "react";
 import { BetanIASidebar } from "./BetanIASidebar";
 import { BetanIAChat } from "./BetanIAChat";
-import { BetanIAWidgets } from "./BetanIAWidgets";
+import { BetanIAWidgetsEnhanced } from "./BetanIAWidgetsEnhanced";
 import { BetanIAHeader } from "./BetanIAHeader";
 
 export const BetanIALayout = () => {
@@ -24,7 +24,7 @@ export const BetanIALayout = () => {
         
         {/* Right Widgets Panel */}
         <aside className="w-96 flex-shrink-0 border-l border-border/50 bg-card/50">
-          <BetanIAWidgets />
+          <BetanIAWidgetsEnhanced />
         </aside>
       </div>
     </div>

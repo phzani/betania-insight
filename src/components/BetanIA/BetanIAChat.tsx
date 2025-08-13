@@ -1,64 +1,37 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Send, Paperclip, Zap } from "lucide-react";
+import React, { useRef, useEffect } from "react";
+import { Send, Paperclip, Zap, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FixtureCard } from "./FixtureCard";
 import { ChatMessage } from "./ChatMessage";
-import { getBetanIAMockResponse } from "@/lib/mockData";
-
-interface Message {
-  id: string;
-  type: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  context?: any;
-}
+import { useBetanIAChat } from "@/hooks/useBetanIAChat";
+import { useToast } from "@/hooks/use-toast";
 
 export const BetanIAChat = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      type: 'assistant',
-      content: '👋 E aí! Sou o BetanIA, seu assistente de análise esportiva. Pode me perguntar sobre jogos, times, odds... Vamos nessa!',
-      timestamp: new Date(),
-    }
-  ]);
-  
-  const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const { messages, isLoading, error, sendMessage, clearMessages } = useBetanIAChat();
+  const [inputMessage, setInputMessage] = React.useState('');
+  const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: inputMessage,
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
-    setIsTyping(true);
-
-    // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: getBetanIAResponse(inputMessage),
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
-      setIsTyping(false);
-    }, 1500);
+    
+    try {
+      await sendMessage(inputMessage);
+    } catch (err) {
+      toast({
+        title: "Erro no Chat",
+        description: "Não foi possível enviar a mensagem. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const getBetanIAResponse = (query: string): string => {
-    return getBetanIAMockResponse(query);
+  const handleQuickAction = (message: string) => {
+    setInputMessage(message);
+    handleSendMessage();
   };
 
   useEffect(() => {
@@ -80,8 +53,8 @@ export const BetanIAChat = () => {
             />
           ))}
           
-          {isTyping && (
-            <div className="flex items-center gap-3 p-4 betania-glass max-w-md">
+          {isLoading && (
+            <div className="flex items-center gap-3 p-4 betania-glass max-w-md message-enter">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                 <Zap className="w-4 h-4 text-white" />
               </div>
@@ -99,13 +72,20 @@ export const BetanIAChat = () => {
 
       {/* Input Area */}
       <div className="p-6 border-t border-border/50 bg-card/30 backdrop-blur-sm">
+        {error && (
+          <div className="mb-3 p-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
+            {error}
+          </div>
+        )}
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
             size="sm" 
             className="betania-glass border-0 hover:bg-white/[0.08] text-muted-foreground"
+            onClick={clearMessages}
+            title="Limpar conversa"
           >
-            <Paperclip className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4" />
           </Button>
           
           <div className="flex-1 relative">
@@ -120,7 +100,7 @@ export const BetanIAChat = () => {
               onClick={handleSendMessage}
               size="sm"
               className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-blue-500 hover:bg-blue-600"
-              disabled={!inputMessage.trim()}
+              disabled={!inputMessage.trim() || isLoading}
             >
               <Send className="h-4 w-4" />
             </Button>
@@ -133,7 +113,8 @@ export const BetanIAChat = () => {
             variant="ghost" 
             size="sm" 
             className="betania-glass border-0 text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => setInputMessage('Próximos jogos do Palmeiras')}
+            onClick={() => handleQuickAction('Próximos jogos do Palmeiras')}
+            disabled={isLoading}
           >
             Próximos jogos
           </Button>
@@ -141,7 +122,8 @@ export const BetanIAChat = () => {
             variant="ghost" 
             size="sm" 
             className="betania-glass border-0 text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => setInputMessage('Jogos de hoje')}
+            onClick={() => handleQuickAction('Jogos de hoje')}
+            disabled={isLoading}
           >
             Jogos hoje
           </Button>
@@ -149,7 +131,8 @@ export const BetanIAChat = () => {
             variant="ghost" 
             size="sm" 
             className="betania-glass border-0 text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => setInputMessage('Libertadores 2025')}
+            onClick={() => handleQuickAction('Libertadores 2025')}
+            disabled={isLoading}
           >
             Libertadores
           </Button>
