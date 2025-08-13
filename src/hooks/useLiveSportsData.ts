@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+const SUPABASE_URL = 'https://skeauyjradscjgfebkqa.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrZWF1eWpyYWRzY2pnZmVia3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNTg3MjAsImV4cCI6MjA3MDYzNDcyMH0.jdVE76iSSqfJkc_3OhrIH1K538w-Vfip3WIbK972VQ8';
 import { 
   LiveSportsData, 
   Fixture, 
@@ -61,6 +62,22 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       const today = new Date().toISOString().split('T')[0];
       const currentSeason = new Date().getFullYear();
 
+    // Helper to call Edge Function with GET
+    const callApi = (p: Record<string, any>) => {
+      const url = new URL(`${SUPABASE_URL}/functions/v1/api-sports`);
+      Object.entries(p).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
+      });
+      return fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'content-type': 'application/json'
+        }
+      }).then(r => r.json());
+    };
+
     // Parallel API calls for better performance
     const [
       todayFixturesResult,
@@ -70,58 +87,12 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       serieATeamsResult,
       topScorersResult
     ] = await Promise.allSettled([
-      // Today's fixtures
-      supabase.functions.invoke('api-sports', {
-        body: {
-          endpoint: 'fixtures',
-          date: today,
-          league: BRAZILIAN_LEAGUES.SERIE_A,
-          season: currentSeason
-        }
-      }),
-      
-      // Live fixtures
-      supabase.functions.invoke('api-sports', {
-        body: {
-          endpoint: 'fixtures',
-          live: 'all'
-        }
-      }),
-      
-      // Brazilian leagues
-      supabase.functions.invoke('api-sports', {
-        body: {
-          endpoint: 'leagues',
-          country: 'Brazil'
-        }
-      }),
-      
-      // Pre-match odds for today
-      supabase.functions.invoke('api-sports', {
-        body: {
-          endpoint: 'odds-pre',
-          league: BRAZILIAN_LEAGUES.SERIE_A,
-          season: currentSeason
-        }
-      }),
-      
-      // Serie A teams
-      supabase.functions.invoke('api-sports', {
-        body: {
-          endpoint: 'teams',
-          league: BRAZILIAN_LEAGUES.SERIE_A,
-          season: currentSeason
-        }
-      }),
-
-      // Top scorers
-      supabase.functions.invoke('api-sports', {
-        body: {
-          endpoint: 'topscorers',
-          league: BRAZILIAN_LEAGUES.SERIE_A,
-          season: currentSeason
-        }
-      })
+      callApi({ endpoint: 'fixtures', date: today, league: BRAZILIAN_LEAGUES.SERIE_A, season: currentSeason }),
+      callApi({ endpoint: 'fixtures', live: 'all' }),
+      callApi({ endpoint: 'leagues', country: 'Brazil' }),
+      callApi({ endpoint: 'odds-pre', league: BRAZILIAN_LEAGUES.SERIE_A, season: currentSeason }),
+      callApi({ endpoint: 'teams', league: BRAZILIAN_LEAGUES.SERIE_A, season: currentSeason }),
+      callApi({ endpoint: 'topscorers', league: BRAZILIAN_LEAGUES.SERIE_A, season: currentSeason }),
     ]);
 
       // Process results with error handling

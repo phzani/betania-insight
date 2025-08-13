@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { ApiSportsResponse, Fixture, League, Team, Odds } from '@/types/sports';
+
+const SUPABASE_URL = 'https://skeauyjradscjgfebkqa.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrZWF1eWpyYWRzY2pnZmVia3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNTg3MjAsImV4cCI6MjA3MDYzNDcyMH0.jdVE76iSSqfJkc_3OhrIH1K538w-Vfip3WIbK972VQ8';
 
 interface UseApiSportsOptions {
   autoFetch?: boolean;
@@ -36,20 +38,27 @@ export function useApiSports<T = any>(
       setLoading(true);
       setError(null);
 
-      console.log(`[useApiSports] Fetching ${endpoint} with params:`, params);
-
-      const { data: result, error: supabaseError } = await supabase.functions.invoke('api-sports', {
-        body: { endpoint, ...params }
+      const url = new URL(`${SUPABASE_URL}/functions/v1/api-sports`);
+      url.searchParams.set('endpoint', endpoint);
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          url.searchParams.set(key, String(value));
+        }
       });
 
-      if (supabaseError) {
-        throw new Error(`Supabase error: ${supabaseError.message}`);
-      }
+      const res = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'content-type': 'application/json'
+        }
+      });
 
-      const apiResponse: ApiSportsResponse<T> = result;
+      const apiResponse: ApiSportsResponse<T> = await res.json();
 
-      if (!apiResponse.ok) {
-        throw new Error(apiResponse.error?.message || `API error for ${endpoint}`);
+      if (!res.ok || !apiResponse.ok) {
+        throw new Error(apiResponse?.error?.message || `API error for ${endpoint}`);
       }
 
       console.log(`[useApiSports] Success for ${endpoint}:`, {
