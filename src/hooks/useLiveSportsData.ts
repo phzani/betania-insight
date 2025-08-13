@@ -144,14 +144,20 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
                          leagues.length > 0 || teams.length > 0;
 
       if (!hasRealData) {
-        console.log('[LiveSportsData] No real data available, using enhanced mock data');
+        console.log('[LiveSportsData] No real data available, avoiding mock fixtures');
         const mockData = getMockSportsData();
         setData({
-          ...mockData,
+          fixtures: [], // avoid showing non-existent games
+          leagues: mockData.leagues,
+          teams: mockData.teams,
+          odds: [],
+          teamStats: [],
           loading: false,
-          error: null,
+          error: 'Sem dados reais no momento',
           lastUpdate: new Date()
         });
+        // Update filter store with safe values
+        updateData([], mockData.leagues, mockData.teams);
         return;
       }
 
@@ -170,7 +176,7 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
         odds: odds.length
       });
 
-      const finalFixtures = allFixtures.length > 0 ? allFixtures : getMockSportsData().fixtures;
+      const finalFixtures = allFixtures; // Do not use mock fixtures to avoid showing non-existent live games
       const finalLeagues = leagues.length > 0 ? leagues : getMockSportsData().leagues;
       const finalTeams = teams.length > 0 ? teams : getMockSportsData().teams;
       
@@ -192,16 +198,21 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar dados esportivos';
       console.error('[LiveSportsData] Error:', errorMessage);
       
-      // Fallback to mock data on error
+      // Use safe fallback without mock fixtures
       const mockData = getMockSportsData();
       
-      // Update filter store even with mock data
-      updateData(mockData.fixtures, mockData.leagues, mockData.teams);
+      // Update filter store with safe values
+      updateData([], mockData.leagues, mockData.teams);
       
       setData({
-        ...mockData,
+        fixtures: [],
+        leagues: mockData.leagues,
+        teams: mockData.teams,
+        odds: [],
+        teamStats: [],
         loading: false,
-        error: `API indisponível (usando dados demo): ${errorMessage}`
+        error: `API indisponível: ${errorMessage}`,
+        lastUpdate: new Date()
       });
     }
   }, []);
@@ -239,11 +250,14 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
  */
 export function useWidgetData() {
   const sportsData = useLiveSportsData();
+  const { getFilteredFixtures } = useFilterStore();
+  
+  const fixturesFiltered = getFilteredFixtures();
   
   const processedData = {
-    liveGames: convertFixturesToLiveGames(sportsData.fixtures),
-    todayFixtures: filterFixturesByDate(sportsData.fixtures, 'today'),
-    tomorrowFixtures: filterFixturesByDate(sportsData.fixtures, 'tomorrow'),
+    liveGames: convertFixturesToLiveGames(fixturesFiltered),
+    todayFixtures: filterFixturesByDate(fixturesFiltered, 'today'),
+    tomorrowFixtures: filterFixturesByDate(fixturesFiltered, 'tomorrow'),
     hotOdds: processOddsData(sportsData.odds),
     topPerformers: generateTopPerformers(sportsData.teams),
     loading: sportsData.loading,
