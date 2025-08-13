@@ -1,97 +1,213 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  LiveSportsData, 
+  Fixture, 
+  League, 
+  Team, 
+  Odds,
+  LiveGame,
+  HotOdd,
+  TopPerformer
+} from '@/types/sports';
+import { 
+  convertFixturesToLiveGames, 
+  processOddsData, 
+  generateTopPerformers,
+  filterFixturesByDate,
+  validateSportsData,
+  BRAZILIAN_LEAGUES
+} from '@/lib/sportsDataHelpers';
 
-interface LiveSportsData {
-  fixtures: any[];
-  odds: any[];
-  leagues: any[];
-  teams: any[];
-  lastUpdate: Date;
+interface UseLiveSportsDataResult extends LiveSportsData {
+  refresh: () => Promise<void>;
+  refreshing: boolean;
 }
 
-export function useLiveSportsData(): {
-  data: LiveSportsData;
-  loading: boolean;
-  error: string | null;
-  refresh: () => Promise<void>;
-} {
+/**
+ * Comprehensive hook for live sports data with real-time updates
+ */
+export function useLiveSportsData(): UseLiveSportsDataResult {
   const [data, setData] = useState<LiveSportsData>({
     fixtures: [],
     odds: [],
     leagues: [],
     teams: [],
-    lastUpdate: new Date()
+    teamStats: [],
+    lastUpdate: new Date(),
+    loading: true,
+    error: null
   });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchData = async () => {
+  const fetchAllData = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setData(prev => ({ ...prev, loading: true, error: null }));
 
-      // Fetch today's fixtures
-      const { data: fixturesResult, error: fixturesError } = await supabase.functions.invoke('api-sports', {
-        body: {
-          endpoint: 'fixtures',
-          date: new Date().toISOString().split('T')[0],
-          league: 71,
-          season: 2025
+      console.log('[LiveSportsData] Starting comprehensive data fetch...');
+
+      const today = new Date().toISOString().split('T')[0];
+      const currentSeason = new Date().getFullYear();
+
+      // Parallel API calls for better performance
+      const [
+        todayFixturesResult,
+        liveFixturesResult,
+        brazilianLeaguesResult,
+        preOddsResult,
+        serieATeamsResult
+      ] = await Promise.allSettled([
+        // Today's fixtures
+        supabase.functions.invoke('api-sports', {
+          body: {
+            endpoint: 'fixtures',
+            date: today,
+            league: BRAZILIAN_LEAGUES.SERIE_A,
+            season: currentSeason
+          }
+        }),
+        
+        // Live fixtures
+        supabase.functions.invoke('api-sports', {
+          body: {
+            endpoint: 'fixtures',
+            live: 'all'
+          }
+        }),
+        
+        // Brazilian leagues
+        supabase.functions.invoke('api-sports', {
+          body: {
+            endpoint: 'leagues',
+            country: 'Brazil'
+          }
+        }),
+        
+        // Pre-match odds for today
+        supabase.functions.invoke('api-sports', {
+          body: {
+            endpoint: 'odds-pre',
+            league: BRAZILIAN_LEAGUES.SERIE_A,
+            season: currentSeason
+          }
+        }),
+        
+        // Serie A teams
+        supabase.functions.invoke('api-sports', {
+          body: {
+            endpoint: 'teams',
+            league: BRAZILIAN_LEAGUES.SERIE_A,
+            season: currentSeason
+          }
+        })
+      ]);
+
+      // Process results with error handling
+      const processResult = (result: any, fallback: any[] = []) => {
+        if (result.status === 'fulfilled' && result.value?.data?.ok) {
+          return validateSportsData(result.value.data.data);
+        }
+        console.warn('[LiveSportsData] API call failed or returned invalid data:', result);
+        return fallback;
+      };
+
+      const todayFixtures = processResult(todayFixturesResult) as Fixture[];
+      const liveFixtures = processResult(liveFixturesResult) as Fixture[];
+      const leagues = processResult(brazilianLeaguesResult) as League[];
+      const odds = processResult(preOddsResult) as Odds[];
+      const teams = processResult(serieATeamsResult) as Team[];
+
+      // Combine all fixtures (remove duplicates)
+      const allFixtures = [...todayFixtures];
+      liveFixtures.forEach(liveFixture => {
+        if (!allFixtures.find(f => f.fixture.id === liveFixture.fixture.id)) {
+          allFixtures.push(liveFixture);
         }
       });
 
-      // Fetch Brazilian leagues
-      const { data: leaguesResult, error: leaguesError } = await supabase.functions.invoke('api-sports', {
-        body: {
-          endpoint: 'leagues',
-          country: 'Brazil'
-        }
+      console.log('[LiveSportsData] Data processed:', {
+        fixtures: allFixtures.length,
+        leagues: leagues.length,
+        teams: teams.length,
+        odds: odds.length
       });
-
-      // Handle results
-      const fixtures = fixturesResult?.ok ? fixturesResult.data : [];
-      const leagues = leaguesResult?.ok ? leaguesResult.data : [];
 
       setData({
-        fixtures: fixtures || [],
-        odds: [], // Will be populated when live odds are fetched
-        leagues: leagues || [],
-        teams: [], // Will be populated based on fixtures
-        lastUpdate: new Date()
-      });
-
-      console.log('[LiveSportsData] Data updated:', {
-        fixtures: fixtures?.length || 0,
-        leagues: leagues?.length || 0
+        fixtures: allFixtures,
+        leagues,
+        teams,
+        odds,
+        teamStats: [], // Will be populated as needed
+        lastUpdate: new Date(),
+        loading: false,
+        error: null
       });
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar dados esportivos';
-      setError(errorMessage);
       console.error('[LiveSportsData] Error:', errorMessage);
-    } finally {
-      setLoading(false);
+      
+      setData(prev => ({
+        ...prev,
+        loading: false,
+        error: errorMessage
+      }));
     }
-  };
-
-  useEffect(() => {
-    fetchData();
-    
-    // Set up auto-refresh every 2 minutes
-    const interval = setInterval(fetchData, 2 * 60 * 1000);
-    
-    return () => clearInterval(interval);
   }, []);
 
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchAllData();
+    setRefreshing(false);
+  }, [fetchAllData]);
+
+  // Initial load
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+  // Auto-refresh every 2 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('[LiveSportsData] Auto-refresh triggered');
+      fetchAllData();
+    }, 2 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [fetchAllData]);
+
   return {
-    data,
-    loading,
-    error,
-    refresh: fetchData
+    ...data,
+    refresh,
+    refreshing
   };
 }
 
-// Helper function to get formatted match time
+/**
+ * Hook specifically for widget data processing
+ */
+export function useWidgetData() {
+  const { fixtures, odds, teams, loading, error, lastUpdate, refresh } = useLiveSportsData();
+  
+  const processedData = {
+    liveGames: convertFixturesToLiveGames(fixtures),
+    todayFixtures: filterFixturesByDate(fixtures, 'today'),
+    tomorrowFixtures: filterFixturesByDate(fixtures, 'tomorrow'),
+    hotOdds: processOddsData(odds),
+    topPerformers: generateTopPerformers(teams),
+    loading,
+    error,
+    lastUpdate,
+    refresh
+  };
+
+  return processedData;
+}
+
+/**
+ * Helper functions for formatted data
+ */
 export function getMatchTime(fixtureDate: string | Date): string {
   const date = new Date(fixtureDate);
   const now = new Date();
@@ -106,21 +222,22 @@ export function getMatchTime(fixtureDate: string | Date): string {
   } else if (diffInHours < 24) {
     return `Em ${diffInHours}h`;
   } else {
-    return date.toLocaleDateString('pt-BR', { 
-      day: '2-digit', 
-      month: '2-digit' 
-    });
+    const diffInDays = Math.round(diffInHours / 24);
+    return `Em ${diffInDays}d`;
   }
 }
 
-// Helper function to format team names
-export function formatTeamName(name: string): string {
+export function formatTeamName(name: string, maxLength: number = 12): string {
   if (!name) return 'N/A';
   
-  // Shorten common long names
-  const shortNames: Record<string, string> = {
+  if (name.length <= maxLength) {
+    return name;
+  }
+  
+  // Common team abbreviations
+  const abbreviations: Record<string, string> = {
     'Palmeiras': 'PAL',
-    'Flamengo': 'FLA', 
+    'Flamengo': 'FLA',
     'Corinthians': 'COR',
     'São Paulo': 'SAO',
     'Santos': 'SAN',
@@ -128,8 +245,10 @@ export function formatTeamName(name: string): string {
     'Internacional': 'INT',
     'Botafogo': 'BOT',
     'Vasco da Gama': 'VAS',
-    'Fluminense': 'FLU'
+    'Fluminense': 'FLU',
+    'Athletico-PR': 'CAP',
+    'Atlético-MG': 'CAM'
   };
   
-  return shortNames[name] || name.substring(0, 3).toUpperCase();
+  return abbreviations[name] || name.substring(0, maxLength - 3) + '...';
 }

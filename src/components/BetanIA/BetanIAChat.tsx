@@ -29,9 +29,9 @@ export const BetanIAChat = () => {
     }
   };
 
-  const handleQuickAction = (message: string) => {
+  const handleQuickAction = async (message: string) => {
     setInputMessage(message);
-    handleSendMessage();
+    await sendMessage(message);
   };
 
   useEffect(() => {
