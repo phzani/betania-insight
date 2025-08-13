@@ -18,6 +18,7 @@ interface SportsDataContext {
   fixtures?: any[];
   odds?: any[];
   teamStats?: any[];
+  topScorers?: any[];
 }
 
 serve(async (req) => {
@@ -128,6 +129,9 @@ async function fetchRelevantSportsData(message: string, apiKey: string | undefin
   const context: SportsDataContext = {};
 
   try {
+    // Determine season dynamically
+    const currentSeason = new Date().getFullYear();
+
     // Fetch leagues data for Brazilian competitions
     if (lowerMessage.includes('brasil') || lowerMessage.includes('serie') || lowerMessage.includes('libertadores')) {
       context.leagues = await fetchApiSportsData('leagues', { country: 'Brazil' }, apiKey, supabase);
@@ -138,7 +142,7 @@ async function fetchRelevantSportsData(message: string, apiKey: string | undefin
     const mentionedTeam = teams.find(team => lowerMessage.includes(team));
     
     if (mentionedTeam || lowerMessage.includes('time')) {
-      context.teams = await fetchApiSportsData('teams', { league: 71, season: 2025 }, apiKey, supabase);
+      context.teams = await fetchApiSportsData('teams', { league: 71, season: currentSeason }, apiKey, supabase);
     }
 
     // Fetch fixtures for today, next games, etc.
@@ -146,17 +150,20 @@ async function fetchRelevantSportsData(message: string, apiKey: string | undefin
       const today = new Date().toISOString().split('T')[0];
       context.fixtures = await fetchApiSportsData('fixtures', { 
         league: 71, 
-        season: 2025,
+        season: currentSeason,
         date: today
       }, apiKey, supabase);
     }
 
-    // Fetch odds if mentioned
-    if (lowerMessage.includes('odd')) {
-      context.odds = await fetchApiSportsData('odds-pre', { league: 71 }, apiKey, supabase);
-    }
+  // Fetch odds if mentioned
+  if (lowerMessage.includes('odd')) {
+    context.odds = await fetchApiSportsData('odds-pre', { league: 71, season: currentSeason }, apiKey, supabase);
+  }
 
-    console.log('[BetanIA] Fetched sports data context:', Object.keys(context));
+  // Fetch top scorers when relevant
+  if (lowerMessage.includes('artilheiro') || lowerMessage.includes('artilheiros') || lowerMessage.includes('gols')) {
+    context.topScorers = await fetchApiSportsData('topscorers', { league: 71, season: currentSeason }, apiKey, supabase);
+  }
 
   } catch (error) {
     console.error('[BetanIA] Error fetching sports data:', error);
@@ -200,6 +207,9 @@ async function fetchApiSportsData(endpoint: string, params: any, apiKey: string 
         break;
       case 'odds-pre':
         apiUrl = 'https://v3.football.api-sports.io/odds';
+        break;
+      case 'topscorers':
+        apiUrl = 'https://v3.football.api-sports.io/players/topscorers';
         break;
       default:
         return [];
@@ -292,6 +302,17 @@ function formatSportsDataForPrompt(data: SportsDataContext): string {
     formatted += `\n\nODDS DISPONÍVEIS:\n${data.odds.slice(0, 3).map(o => 
       `- Jogo ${o.fixture?.id}: ${o.bookmakers?.[0]?.bets?.[0]?.values?.map(v => `${v.value}: ${v.odd}`).join(' | ') || 'Odds indisponíveis'}`
     ).join('\n')}`;
+  }
+
+  if (data.topScorers?.length) {
+    const lines = data.topScorers.slice(0, 5).map((it: any, idx: number) => {
+      const player = it.player?.name || 'Jogador';
+      const stats = Array.isArray(it.statistics) ? it.statistics[0] : undefined;
+      const team = stats?.team?.name || '—';
+      const goals = stats?.goals?.total ?? 0;
+      return `- #${idx + 1} ${player} (${team}) – ${goals} gols`;
+    });
+    formatted += `\n\nARTILHEIROS:\n${lines.join('\n')}`;
   }
 
   return formatted || 'Nenhum dado esportivo específico disponível no momento.';
