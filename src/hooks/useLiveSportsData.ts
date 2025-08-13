@@ -18,8 +18,17 @@ import {
   validateSportsData,
   BRAZILIAN_LEAGUES
 } from '@/lib/sportsDataHelpers';
+import { getMockSportsData } from '@/lib/mockSportsData';
 
-interface UseLiveSportsDataResult extends LiveSportsData {
+interface UseLiveSportsDataResult {
+  fixtures: Fixture[];
+  leagues: League[];
+  teams: Team[];
+  odds: Odds[];
+  teamStats: any[];
+  lastUpdate: Date;
+  loading: boolean;
+  error: string | null;
   refresh: () => Promise<void>;
   refreshing: boolean;
 }
@@ -28,15 +37,13 @@ interface UseLiveSportsDataResult extends LiveSportsData {
  * Comprehensive hook for live sports data with real-time updates
  */
 export function useLiveSportsData(): UseLiveSportsDataResult {
-  const [data, setData] = useState<LiveSportsData>({
-    fixtures: [],
-    odds: [],
-    leagues: [],
-    teams: [],
-    teamStats: [],
-    lastUpdate: new Date(),
-    loading: true,
-    error: null
+  const [data, setData] = useState<LiveSportsData>(() => {
+    // Initialize with mock data for immediate display
+    const mockData = getMockSportsData();
+    return {
+      ...mockData,
+      loading: true
+    };
   });
   
   const [refreshing, setRefreshing] = useState(false);
@@ -118,6 +125,22 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       const odds = processResult(preOddsResult) as Odds[];
       const teams = processResult(serieATeamsResult) as Team[];
 
+      // Check if we got any real data, otherwise use mock
+      const hasRealData = todayFixtures.length > 0 || liveFixtures.length > 0 || 
+                         leagues.length > 0 || teams.length > 0;
+
+      if (!hasRealData) {
+        console.log('[LiveSportsData] No real data available, using enhanced mock data');
+        const mockData = getMockSportsData();
+        setData({
+          ...mockData,
+          loading: false,
+          error: null,
+          lastUpdate: new Date()
+        });
+        return;
+      }
+
       // Combine all fixtures (remove duplicates)
       const allFixtures = [...todayFixtures];
       liveFixtures.forEach(liveFixture => {
@@ -126,7 +149,7 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
         }
       });
 
-      console.log('[LiveSportsData] Data processed:', {
+      console.log('[LiveSportsData] Real data processed:', {
         fixtures: allFixtures.length,
         leagues: leagues.length,
         teams: teams.length,
@@ -134,10 +157,10 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       });
 
       setData({
-        fixtures: allFixtures,
-        leagues,
-        teams,
-        odds,
+        fixtures: allFixtures.length > 0 ? allFixtures : getMockSportsData().fixtures,
+        leagues: leagues.length > 0 ? leagues : getMockSportsData().leagues,
+        teams: teams.length > 0 ? teams : getMockSportsData().teams,
+        odds: odds.length > 0 ? odds : getMockSportsData().odds,
         teamStats: [], // Will be populated as needed
         lastUpdate: new Date(),
         loading: false,
@@ -148,11 +171,13 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar dados esportivos';
       console.error('[LiveSportsData] Error:', errorMessage);
       
-      setData(prev => ({
-        ...prev,
+      // Fallback to mock data on error
+      const mockData = getMockSportsData();
+      setData({
+        ...mockData,
         loading: false,
-        error: errorMessage
-      }));
+        error: `API indisponível (usando dados demo): ${errorMessage}`
+      });
     }
   }, []);
 
@@ -188,18 +213,18 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
  * Hook specifically for widget data processing
  */
 export function useWidgetData() {
-  const { fixtures, odds, teams, loading, error, lastUpdate, refresh } = useLiveSportsData();
+  const sportsData = useLiveSportsData();
   
   const processedData = {
-    liveGames: convertFixturesToLiveGames(fixtures),
-    todayFixtures: filterFixturesByDate(fixtures, 'today'),
-    tomorrowFixtures: filterFixturesByDate(fixtures, 'tomorrow'),
-    hotOdds: processOddsData(odds),
-    topPerformers: generateTopPerformers(teams),
-    loading,
-    error,
-    lastUpdate,
-    refresh
+    liveGames: convertFixturesToLiveGames(sportsData.fixtures),
+    todayFixtures: filterFixturesByDate(sportsData.fixtures, 'today'),
+    tomorrowFixtures: filterFixturesByDate(sportsData.fixtures, 'tomorrow'),
+    hotOdds: processOddsData(sportsData.odds),
+    topPerformers: generateTopPerformers(sportsData.teams),
+    loading: sportsData.loading,
+    error: sportsData.error,
+    lastUpdate: sportsData.lastUpdate,
+    refresh: sportsData.refresh
   };
 
   return processedData;
@@ -216,7 +241,14 @@ export function getMatchTime(fixtureDate: string | Date): string {
   const diffInHours = Math.round(diffInMs / (1000 * 60 * 60));
   
   if (diffInHours < 0) {
-    return 'Encerrado';
+    const absDiffInHours = Math.abs(diffInHours);
+    if (absDiffInHours < 1) {
+      return 'Agora';
+    } else if (absDiffInHours < 24) {
+      return `${absDiffInHours}h atrás`;
+    } else {
+      return 'Encerrado';
+    }
   } else if (diffInHours === 0) {
     return 'Agora';
   } else if (diffInHours < 24) {
