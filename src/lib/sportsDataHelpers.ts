@@ -188,31 +188,40 @@ export function processOddsData(odds: Odds[]): HotOdd[] {
 }
 
 /**
- * Generates top performers from team stats (mock implementation)
+ * Map API top scorers to TopPerformer[]
  */
-export function generateTopPerformers(teams: Team[]): TopPerformer[] {
+export function mapTopScorersToPerformers(items: any[]): TopPerformer[] {
+  if (!Array.isArray(items)) return [];
   const performers: TopPerformer[] = [];
-  
-  const mockPlayers = [
-    { name: 'Endrick', team: 'Palmeiras', goals: 8 },
-    { name: 'Pedro', team: 'Flamengo', goals: 7 },
-    { name: 'Calleri', team: 'São Paulo', goals: 6 },
-    { name: 'Cano', team: 'Fluminense', goals: 6 },
-    { name: 'Gabigol', team: 'Flamengo', goals: 5 }
-  ];
-  
-  mockPlayers.forEach((player, index) => {
+  items.forEach((item) => {
+    const player = item.player;
+    const stats = Array.isArray(item.statistics) ? item.statistics[0] : undefined;
+    const teamName = stats?.team?.name || '—';
+    const goals = stats?.goals?.total ?? 0;
     performers.push({
-      name: player.name,
-      team: player.team,
-      stat: `${player.goals} gols`,
-      value: player.goals,
-      performance: Math.max(70, 100 - (index * 5))
+      playerId: player?.id,
+      name: player?.name || 'Jogador',
+      team: teamName,
+      stat: `${goals} gols`,
+      value: goals,
+      performance: Math.min(100, 50 + (goals || 0) * 5)
     });
   });
-  
-  return performers;
+  return performers.sort((a,b) => b.value - a.value).slice(0, 10);
 }
+
+// Fallback generator when API not available
+export function generateTopPerformers(teams: Team[]): TopPerformer[] {
+  if (!Array.isArray(teams) || teams.length === 0) return [];
+  return teams.slice(0, 5).map((t, idx) => ({
+    name: `Jogador ${idx + 1}`,
+    team: t.name,
+    stat: `${Math.max(1, 5 - idx)} gols`,
+    value: Math.max(1, 5 - idx),
+    performance: 70 - idx * 5,
+  }));
+}
+
 
 /**
  * Filters fixtures by date range

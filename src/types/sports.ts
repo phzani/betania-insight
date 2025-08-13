@@ -145,6 +145,7 @@ export interface LiveSportsData {
   teams: Team[];
   odds: Odds[];
   teamStats: TeamStats[];
+  topScorers: TopPerformer[];
   lastUpdate: Date;
   loading: boolean;
   error: string | null;

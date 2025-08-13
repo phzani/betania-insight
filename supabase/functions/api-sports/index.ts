@@ -107,6 +107,12 @@ serve(async (req) => {
         cacheDuration = 30; // 30 seconds
         break;
 
+      case 'topscorers':
+        apiUrl = 'https://v3.football.api-sports.io/players/topscorers';
+        cacheKey = `topscorers_${JSON.stringify(params)}`;
+        cacheDuration = 3600; // 1 hour
+        break;
+
       default:
         throw new Error(`Unknown endpoint: ${endpoint}`);
     }

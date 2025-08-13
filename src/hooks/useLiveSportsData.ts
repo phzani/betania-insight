@@ -27,6 +27,7 @@ interface UseLiveSportsDataResult {
   teams: Team[];
   odds: Odds[];
   teamStats: any[];
+  topScorers: TopPerformer[];
   lastUpdate: Date;
   loading: boolean;
   error: string | null;
@@ -43,8 +44,9 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
     const mockData = getMockSportsData();
     return {
       ...mockData,
+      topScorers: [],
       loading: true
-    };
+    } as LiveSportsData;
   });
   
   const [refreshing, setRefreshing] = useState(false);
@@ -59,58 +61,68 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       const today = new Date().toISOString().split('T')[0];
       const currentSeason = new Date().getFullYear();
 
-      // Parallel API calls for better performance
-      const [
-        todayFixturesResult,
-        liveFixturesResult,
-        brazilianLeaguesResult,
-        preOddsResult,
-        serieATeamsResult
-      ] = await Promise.allSettled([
-        // Today's fixtures
-        supabase.functions.invoke('api-sports', {
-          body: {
-            endpoint: 'fixtures',
-            date: today,
-            league: BRAZILIAN_LEAGUES.SERIE_A,
-            season: currentSeason
-          }
-        }),
-        
-        // Live fixtures
-        supabase.functions.invoke('api-sports', {
-          body: {
-            endpoint: 'fixtures',
-            live: 'all'
-          }
-        }),
-        
-        // Brazilian leagues
-        supabase.functions.invoke('api-sports', {
-          body: {
-            endpoint: 'leagues',
-            country: 'Brazil'
-          }
-        }),
-        
-        // Pre-match odds for today
-        supabase.functions.invoke('api-sports', {
-          body: {
-            endpoint: 'odds-pre',
-            league: BRAZILIAN_LEAGUES.SERIE_A,
-            season: currentSeason
-          }
-        }),
-        
-        // Serie A teams
-        supabase.functions.invoke('api-sports', {
-          body: {
-            endpoint: 'teams',
-            league: BRAZILIAN_LEAGUES.SERIE_A,
-            season: currentSeason
-          }
-        })
-      ]);
+    // Parallel API calls for better performance
+    const [
+      todayFixturesResult,
+      liveFixturesResult,
+      brazilianLeaguesResult,
+      preOddsResult,
+      serieATeamsResult,
+      topScorersResult
+    ] = await Promise.allSettled([
+      // Today's fixtures
+      supabase.functions.invoke('api-sports', {
+        body: {
+          endpoint: 'fixtures',
+          date: today,
+          league: BRAZILIAN_LEAGUES.SERIE_A,
+          season: currentSeason
+        }
+      }),
+      
+      // Live fixtures
+      supabase.functions.invoke('api-sports', {
+        body: {
+          endpoint: 'fixtures',
+          live: 'all'
+        }
+      }),
+      
+      // Brazilian leagues
+      supabase.functions.invoke('api-sports', {
+        body: {
+          endpoint: 'leagues',
+          country: 'Brazil'
+        }
+      }),
+      
+      // Pre-match odds for today
+      supabase.functions.invoke('api-sports', {
+        body: {
+          endpoint: 'odds-pre',
+          league: BRAZILIAN_LEAGUES.SERIE_A,
+          season: currentSeason
+        }
+      }),
+      
+      // Serie A teams
+      supabase.functions.invoke('api-sports', {
+        body: {
+          endpoint: 'teams',
+          league: BRAZILIAN_LEAGUES.SERIE_A,
+          season: currentSeason
+        }
+      }),
+
+      // Top scorers
+      supabase.functions.invoke('api-sports', {
+        body: {
+          endpoint: 'topscorers',
+          league: BRAZILIAN_LEAGUES.SERIE_A,
+          season: currentSeason
+        }
+      })
+    ]);
 
       // Process results with error handling
       const processResult = (result: any, fallback: any[] = []) => {
@@ -133,15 +145,16 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
         return fallback;
       };
 
-      const todayFixtures = processResult(todayFixturesResult) as Fixture[];
-      const liveFixtures = processResult(liveFixturesResult) as Fixture[];
-      const leagues = processResult(brazilianLeaguesResult) as League[];
-      const odds = processResult(preOddsResult) as Odds[];
-      const teams = processResult(serieATeamsResult) as Team[];
+    const todayFixtures = processResult(todayFixturesResult) as Fixture[];
+    const liveFixtures = processResult(liveFixturesResult) as Fixture[];
+    const leagues = processResult(brazilianLeaguesResult) as League[];
+    const odds = processResult(preOddsResult) as Odds[];
+    const teams = processResult(serieATeamsResult) as Team[];
+    const topScorersRaw = processResult(topScorersResult) as any[];
 
       // Check if we got any real data, otherwise use mock
-      const hasRealData = todayFixtures.length > 0 || liveFixtures.length > 0 || 
-                         leagues.length > 0 || teams.length > 0;
+    const hasRealData = todayFixtures.length > 0 || liveFixtures.length > 0 || 
+                       leagues.length > 0 || teams.length > 0;
 
       if (!hasRealData) {
         console.log('[LiveSportsData] No real data available, avoiding mock fixtures');
@@ -152,6 +165,7 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
           teams: mockData.teams,
           odds: [],
           teamStats: [],
+          topScorers: [],
           loading: false,
           error: 'Sem dados reais no momento',
           lastUpdate: new Date()
@@ -176,23 +190,28 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
         odds: odds.length
       });
 
-      const finalFixtures = allFixtures; // Do not use mock fixtures to avoid showing non-existent live games
-      const finalLeagues = leagues.length > 0 ? leagues : getMockSportsData().leagues;
-      const finalTeams = teams.length > 0 ? teams : getMockSportsData().teams;
-      
-      // Update filter store with new data
-      updateData(finalFixtures, finalLeagues, finalTeams);
+    const finalFixtures = allFixtures; // Do not use mock fixtures
+    const finalLeagues = leagues.length > 0 ? leagues : getMockSportsData().leagues;
+    const finalTeams = teams.length > 0 ? teams : getMockSportsData().teams;
 
-      setData({
-        fixtures: finalFixtures,
-        leagues: finalLeagues,
-        teams: finalTeams,
-        odds: odds.length > 0 ? odds : getMockSportsData().odds,
-        teamStats: [], // Will be populated as needed
-        lastUpdate: new Date(),
-        loading: false,
-        error: null
-      });
+    // Map top scorers
+    const { mapTopScorersToPerformers } = await import('@/lib/sportsDataHelpers');
+    const topScorers = mapTopScorersToPerformers(topScorersRaw);
+    
+    // Update filter store with new data
+    updateData(finalFixtures, finalLeagues, finalTeams);
+
+    setData({
+      fixtures: finalFixtures,
+      leagues: finalLeagues,
+      teams: finalTeams,
+      odds: odds.length > 0 ? odds : [],
+      teamStats: [], // Will be populated as needed
+      topScorers,
+      lastUpdate: new Date(),
+      loading: false,
+      error: null
+    });
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar dados esportivos';
@@ -210,6 +229,7 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
         teams: mockData.teams,
         odds: [],
         teamStats: [],
+        topScorers: [],
         loading: false,
         error: `API indisponível: ${errorMessage}`,
         lastUpdate: new Date()
@@ -259,7 +279,7 @@ export function useWidgetData() {
     todayFixtures: filterFixturesByDate(fixturesFiltered, 'today'),
     tomorrowFixtures: filterFixturesByDate(fixturesFiltered, 'tomorrow'),
     hotOdds: processOddsData(sportsData.odds),
-    topPerformers: generateTopPerformers(sportsData.teams),
+    topPerformers: sportsData.topScorers ?? [],
     loading: sportsData.loading,
     error: sportsData.error,
     lastUpdate: sportsData.lastUpdate,
