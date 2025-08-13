@@ -19,6 +19,7 @@ import {
   BRAZILIAN_LEAGUES
 } from '@/lib/sportsDataHelpers';
 import { getMockSportsData } from '@/lib/mockSportsData';
+import { useFilterStore } from '@/stores/filterStore';
 
 interface UseLiveSportsDataResult {
   fixtures: Fixture[];
@@ -47,6 +48,7 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
   });
   
   const [refreshing, setRefreshing] = useState(false);
+  const updateData = useFilterStore(state => state.updateData);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -112,10 +114,22 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
 
       // Process results with error handling
       const processResult = (result: any, fallback: any[] = []) => {
-        if (result.status === 'fulfilled' && result.value?.data?.ok) {
-          return validateSportsData(result.value.data.data);
+        if (result.status === 'fulfilled' && result.value?.data) {
+          const apiResponse = result.value.data;
+          if (apiResponse?.ok && apiResponse?.data) {
+            return validateSportsData(apiResponse.data);
+          }
         }
-        console.warn('[LiveSportsData] API call failed or returned invalid data:', result);
+        if (result.status === 'rejected') {
+          console.warn('[LiveSportsData] API call rejected:', result.reason);
+        } else {
+          console.warn('[LiveSportsData] API call failed or returned invalid data:', {
+            status: result.status,
+            hasValue: !!result.value,
+            hasData: !!result.value?.data,
+            error: result.value?.error || result.value?.data?.error
+          });
+        }
         return fallback;
       };
 
@@ -156,10 +170,17 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
         odds: odds.length
       });
 
+      const finalFixtures = allFixtures.length > 0 ? allFixtures : getMockSportsData().fixtures;
+      const finalLeagues = leagues.length > 0 ? leagues : getMockSportsData().leagues;
+      const finalTeams = teams.length > 0 ? teams : getMockSportsData().teams;
+      
+      // Update filter store with new data
+      updateData(finalFixtures, finalLeagues, finalTeams);
+
       setData({
-        fixtures: allFixtures.length > 0 ? allFixtures : getMockSportsData().fixtures,
-        leagues: leagues.length > 0 ? leagues : getMockSportsData().leagues,
-        teams: teams.length > 0 ? teams : getMockSportsData().teams,
+        fixtures: finalFixtures,
+        leagues: finalLeagues,
+        teams: finalTeams,
         odds: odds.length > 0 ? odds : getMockSportsData().odds,
         teamStats: [], // Will be populated as needed
         lastUpdate: new Date(),
@@ -173,6 +194,10 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       
       // Fallback to mock data on error
       const mockData = getMockSportsData();
+      
+      // Update filter store even with mock data
+      updateData(mockData.fixtures, mockData.leagues, mockData.teams);
+      
       setData({
         ...mockData,
         loading: false,

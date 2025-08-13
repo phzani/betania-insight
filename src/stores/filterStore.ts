@@ -74,17 +74,26 @@ export const useFilterStore = create<FilterState>((set, get) => ({
   
   updateData: (fixtures, leagues, teams) => {
     const today = new Date().toISOString().split('T')[0];
-    const todayCount = fixtures.filter(f => 
-      f.fixture.date.startsWith(today)
-    ).length;
+    const now = new Date();
     
-    const liveCount = fixtures.filter(f => 
-      ['1H', '2H', 'HT'].includes(f.fixture.status.short)
-    ).length;
+    const todayCount = fixtures.filter(f => {
+      const fixtureDate = new Date(f.fixture.date);
+      const fixtureDateStr = fixtureDate.toISOString().split('T')[0];
+      return fixtureDateStr === today;
+    }).length;
     
-    const upcomingCount = fixtures.filter(f => 
-      f.fixture.status.short === 'NS' && new Date(f.fixture.date) > new Date()
-    ).length;
+    const liveCount = fixtures.filter(f => {
+      const status = f.fixture.status.short;
+      return ['1H', '2H', 'HT', 'LIVE', 'P'].includes(status);
+    }).length;
+    
+    const upcomingCount = fixtures.filter(f => {
+      const status = f.fixture.status.short;
+      const fixtureDate = new Date(f.fixture.date);
+      return status === 'NS' && fixtureDate > now;
+    }).length;
+    
+    console.log('[FilterStore] Updated counts:', { todayCount, liveCount, upcomingCount, totalFixtures: fixtures.length });
     
     set({ 
       fixtures, 

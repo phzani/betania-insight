@@ -4,8 +4,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useFilterStore } from "@/stores/filterStore";
-import { formatTeamName, getLeagueEmoji, BRAZILIAN_LEAGUES } from "@/lib/sportsDataHelpers";
-import { useLiveSportsData } from "@/hooks/useLiveSportsData";
+import { getLeagueEmoji, BRAZILIAN_LEAGUES } from "@/lib/sportsDataHelpers";
+import { useLiveSportsData, formatTeamName } from "@/hooks/useLiveSportsData";
 
 export const BetanIASidebar = () => {
   const {
@@ -87,13 +87,19 @@ export const BetanIASidebar = () => {
   };
 
   const getTeamForm = (teamId: number): string => {
-    // Mock form data - in real implementation, this would come from team stats
-    const forms: Record<number, string> = {
+    // Try to get real team stats form data
+    const teamStat = sportsData.teamStats.find(stat => stat.team_id === teamId);
+    if (teamStat && teamStat.form) {
+      return teamStat.form;
+    }
+    
+    // Fallback form data for common teams while loading real data
+    const fallbackForms: Record<number, string> = {
       119: "WWDWL", // Palmeiras
       127: "WLWWW", // Flamengo  
       124: "DWLWW", // São Paulo
     };
-    return forms[teamId] || "---";
+    return fallbackForms[teamId] || "---";
   };
 
   return (
@@ -168,7 +174,7 @@ export const BetanIASidebar = () => {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs">
-                        {formatTeamName(team.name, true)}
+                        {formatTeamName(team.name, 3)}
                       </div>
                       <div className="flex flex-col items-start">
                         <span className="text-sm font-medium">{formatTeamName(team.name)}</span>

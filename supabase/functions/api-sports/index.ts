@@ -35,10 +35,21 @@ serve(async (req) => {
       throw new Error('APISPORTS_KEY not configured');
     }
 
-    const url = new URL(req.url);
-    const endpoint = url.searchParams.get('endpoint');
-    const params = Object.fromEntries(url.searchParams.entries());
-    delete params.endpoint;
+    // Handle both GET and POST requests
+    let endpoint: string;
+    let params: any = {};
+
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      endpoint = url.searchParams.get('endpoint') || '';
+      params = Object.fromEntries(url.searchParams.entries());
+      delete params.endpoint;
+    } else {
+      const body = await req.json();
+      endpoint = body.endpoint || '';
+      params = { ...body };
+      delete params.endpoint;
+    }
 
     console.log(`[API-Sports] Calling endpoint: ${endpoint}`, params);
 
