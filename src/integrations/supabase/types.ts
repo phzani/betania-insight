@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_cache: {
+        Row: {
+          cache_key: string
+          created_at: string
+          data: Json
+          endpoint: string
+          expires_at: string
+          id: string
+          params: Json | null
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          data: Json
+          endpoint: string
+          expires_at: string
+          id?: string
+          params?: Json | null
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          data?: Json
+          endpoint?: string
+          expires_at?: string
+          id?: string
+          params?: Json | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           context: Json | null
@@ -412,7 +442,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      clean_expired_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

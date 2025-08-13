@@ -1,1 +1,4 @@
 project_id = "skeauyjradscjgfebkqa"
+
+[functions.api-sports]
+verify_jwt = false

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FixtureCard } from "./FixtureCard";
 import { ChatMessage } from "./ChatMessage";
+import { getBetanIAMockResponse } from "@/lib/mockData";
 
 interface Message {
   id: string;
@@ -57,14 +58,7 @@ export const BetanIAChat = () => {
   };
 
   const getBetanIAResponse = (query: string): string => {
-    const responses = [
-      'Beleza! Deixa eu dar uma olhada nos dados aqui... 📊',
-      'Opa, achei uns jogos interessantes pra você! ⚽',
-      'As odds tão meio esquisitas hoje, mas vou te mostrar mesmo assim 👀',
-      'Eita, esse time tá numa sequência boa hein! Vamos aos números... 📈'
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
+    return getBetanIAMockResponse(query);
   };
 
   useEffect(() => {
