@@ -95,26 +95,31 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       callApi({ endpoint: 'topscorers', league: BRAZILIAN_LEAGUES.SERIE_A, season: currentSeason }),
     ]);
 
-      // Process results with error handling
-      const processResult = (result: any, fallback: any[] = []) => {
-        if (result.status === 'fulfilled' && result.value?.data) {
-          const apiResponse = result.value.data;
-          if (apiResponse?.ok && apiResponse?.data) {
-            return validateSportsData(apiResponse.data);
-          }
+    // Process results with error handling
+    const processResult = (result: any, fallback: any[] = []) => {
+      if (result.status === 'fulfilled') {
+        const apiResponse = result.value;
+        // Shape: { ok, data } from Edge Function
+        if (apiResponse?.ok && Array.isArray(apiResponse.data)) {
+          return validateSportsData(apiResponse.data);
         }
-        if (result.status === 'rejected') {
-          console.warn('[LiveSportsData] API call rejected:', result.reason);
-        } else {
-          console.warn('[LiveSportsData] API call failed or returned invalid data:', {
-            status: result.status,
-            hasValue: !!result.value,
-            hasData: !!result.value?.data,
-            error: result.value?.error || result.value?.data?.error
-          });
+        // In case some call returned raw array
+        if (Array.isArray(apiResponse)) {
+          return validateSportsData(apiResponse);
         }
-        return fallback;
-      };
+      }
+      if (result.status === 'rejected') {
+        console.warn('[LiveSportsData] API call rejected:', result.reason);
+      } else {
+        console.warn('[LiveSportsData] API call failed or returned invalid data:', {
+          status: result.status,
+          hasValue: !!result.value,
+          hasData: Array.isArray(result.value?.data),
+          error: result.value?.error
+        });
+      }
+      return fallback;
+    };
 
     const todayFixtures = processResult(todayFixturesResult) as Fixture[];
     const liveFixtures = processResult(liveFixturesResult) as Fixture[];
