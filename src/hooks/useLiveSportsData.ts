@@ -205,12 +205,12 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
     fetchAllData();
   }, [fetchAllData]);
 
-  // Auto-refresh every 2 minutes for current league
+  // Auto-refresh every 30 seconds for live data
   useEffect(() => {
     const interval = setInterval(() => {
       console.log(`[LiveSportsData] Auto-refresh triggered for league: ${selectedLeague}`);
       fetchAllData();
-    }, 2 * 60 * 1000);
+    }, 30 * 1000); // 30 seconds for live data
     
     return () => clearInterval(interval);
   }, [fetchAllData, selectedLeague]);
@@ -245,10 +245,13 @@ export function useWidgetData() {
     }
   }, [sportsData.fixtures, sportsData.leagues, sportsData.teams, updateData]);
   
-  // Process live games from fixtures - filtered by selected league
+  // Process live games from fixtures - filtered by selected league and expanded status check
   const liveGames = sportsData.fixtures
     .filter(f => {
-      const isLive = ['1H', '2H', 'HT', 'LIVE'].includes(f.fixture.status.short);
+      const liveStatuses = ['1H', '2H', 'HT', 'LIVE', 'ET', 'P', 'INT', 'BT'];
+      const isLive = liveStatuses.includes(f.fixture.status.short) || 
+                     f.fixture.status.long?.toLowerCase().includes('live') ||
+                     f.fixture.status.elapsed !== null;
       const matchesLeague = !selectedLeague || f.league.id === selectedLeague;
       return isLive && matchesLeague;
     })

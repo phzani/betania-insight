@@ -236,44 +236,36 @@ export const BetanIAChat = () => {
           </div>
         </div>
         
-        {/* Dynamic Quick Actions */}
+        {/* Quick Actions - Simplified */}
         <div className="flex flex-wrap gap-2 mt-3">
-          {quickActions.map((action, index) => (
-            <Button 
-              key={index}
-              variant="ghost" 
-              size="sm" 
-              className="betania-glass border-0 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => handleQuickAction(action.message)}
-              disabled={isLoading}
-            >
-              {action.label}
-            </Button>
-          ))}
-          
-          {/* Filter info */}
-          {(todayCount > 0 || liveCount > 0) && (
-            <div className="flex items-center gap-2 ml-auto">
-              {todayCount > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  {todayCount} hoje
-                </Badge>
-              )}
-              {liveCount > 0 && (
-                <Badge variant="secondary" className="text-xs bg-red-500/20 text-red-400">
-                  {liveCount} ao vivo
-                </Badge>
-              )}
-            </div>
-          )}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="betania-glass border-0 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => handleQuickAction("Jogos de hoje")}
+            disabled={isLoading}
+          >
+            Jogos hoje
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="betania-glass border-0 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => handleQuickAction("Jogos ao vivo")}
+            disabled={isLoading}
+          >
+            Ao vivo
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="betania-glass border-0 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => handleQuickAction("Artilheiros")}
+            disabled={isLoading}
+          >
+            Artilheiros
+          </Button>
         </div>
-        
-        {/* Context hint */}
-        {(activeFilter || selectedLeague || selectedTeam) && (
-          <div className="mt-2 text-xs text-muted-foreground">
-            💡 Suas perguntas serão contextualizadas com os filtros ativos
-          </div>
-        )}
       </div>
     </div>
   );
