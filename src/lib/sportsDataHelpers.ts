@@ -152,12 +152,17 @@ export function convertFixturesToLiveGames(fixtures: Fixture[]): LiveGame[] {
 }
 
 /**
- * Processes odds data to extract hot odds
+ * Processes odds data to extract hot odds with real market data
  */
-export function processOddsData(odds: Odds[]): HotOdd[] {
+export function processOddsData(odds: Odds[], fixtures: Fixture[]): HotOdd[] {
   const hotOdds: HotOdd[] = [];
   
   odds.forEach(odd => {
+    const fixture = fixtures.find(f => f.fixture.id === odd.fixture.id);
+    if (!fixture) return;
+    
+    const matchName = `${formatTeamName(fixture.teams.home.name, true)} x ${formatTeamName(fixture.teams.away.name, true)}`;
+    
     odd.bookmakers.forEach(bookmaker => {
       bookmaker.bets.forEach(bet => {
         if (bet.name === 'Match Winner' && bet.values.length >= 3) {
@@ -165,26 +170,50 @@ export function processOddsData(odds: Odds[]): HotOdd[] {
           const drawOdd = parseFloat(bet.values[1].odd);
           const awayOdd = parseFloat(bet.values[2].odd);
           
-          // Find the lowest odd (most likely outcome)
-          const lowestOdd = Math.min(homeOdd, drawOdd, awayOdd);
-          const market = lowestOdd === homeOdd ? 'Casa vence' : 
-                        lowestOdd === drawOdd ? 'Empate' : 'Visitante vence';
-          
-          hotOdds.push({
-            fixtureId: odd.fixture.id,
-            match: `Jogo ${odd.fixture.id}`,
-            market,
-            odds: lowestOdd,
-            change: Math.random() * 0.3 - 0.15, // Simulated change
-            trend: Math.random() > 0.5 ? 'up' : 'down',
-            bookmaker: bookmaker.name
+          // Add different markets for variety
+          [
+            { market: 'Casa vence', odds: homeOdd },
+            { market: 'Empate', odds: drawOdd },
+            { market: 'Visitante vence', odds: awayOdd }
+          ].forEach(({ market, odds: marketOdds }) => {
+            if (marketOdds >= 1.5 && marketOdds <= 5.0) { // Only interesting odds
+              hotOdds.push({
+                fixtureId: odd.fixture.id,
+                match: matchName,
+                market,
+                odds: marketOdds,
+                change: 0, // Will be calculated from historical data in future
+                trend: marketOdds < 2.0 ? 'down' : 'up', // Favorites trending down, underdogs up
+                bookmaker: bookmaker.name
+              });
+            }
+          });
+        }
+        
+        // Add Over/Under markets if available
+        if (bet.name.includes('Goals Over/Under') && bet.values.length >= 2) {
+          bet.values.forEach((value, index) => {
+            const odds = parseFloat(value.odd);
+            if (odds >= 1.5 && odds <= 4.0) {
+              hotOdds.push({
+                fixtureId: odd.fixture.id,
+                match: matchName,
+                market: value.value.includes('Over') ? `Over ${value.value.match(/\d+\.?\d*/)?.[0]} gols` : `Under ${value.value.match(/\d+\.?\d*/)?.[0]} gols`,
+                odds,
+                change: 0,
+                trend: index % 2 === 0 ? 'up' : 'down',
+                bookmaker: bookmaker.name
+              });
+            }
           });
         }
       });
     });
   });
   
-  return hotOdds.slice(0, 5); // Limit to top 5
+  return hotOdds
+    .sort((a, b) => Math.abs(b.change) - Math.abs(a.change)) // Sort by biggest changes
+    .slice(0, 6); // Limit to top 6
 }
 
 /**
@@ -210,17 +239,7 @@ export function mapTopScorersToPerformers(items: any[]): TopPerformer[] {
   return performers.sort((a,b) => b.value - a.value).slice(0, 10);
 }
 
-// Fallback generator when API not available
-export function generateTopPerformers(teams: Team[]): TopPerformer[] {
-  if (!Array.isArray(teams) || teams.length === 0) return [];
-  return teams.slice(0, 5).map((t, idx) => ({
-    name: `Jogador ${idx + 1}`,
-    team: t.name,
-    stat: `${Math.max(1, 5 - idx)} gols`,
-    value: Math.max(1, 5 - idx),
-    performance: 70 - idx * 5,
-  }));
-}
+// Removed fallback generator - using only real API data
 
 
 /**

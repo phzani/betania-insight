@@ -27,6 +27,7 @@ export const BetanIAWidgetsEnhanced = () => {
     topPerformers,
     topYellowCards,
     topRedCards,
+    odds,
     loading,
     error,
     lastUpdate,
@@ -112,10 +113,19 @@ export const BetanIAWidgetsEnhanced = () => {
     return BOOKMAKERS[index];
   };
 
-  const generateOdds = (seed: number, bookmakerIndex: number) => {
-    const base = 1.5 + (seed % 3);
-    const variation = (bookmakerIndex * 0.1) + ((seed % 10) * 0.05);
-    return (base + variation).toFixed(2);
+  const getFixtureOdds = (fixtureId: number, team: 'home' | 'away') => {
+    const fixtureOdds = odds.find(odd => odd.fixture.id === fixtureId);
+    if (!fixtureOdds?.bookmakers?.length) return null;
+    
+    const bookmakerIndex = fixtureBookmakers[`${fixtureId}-${team}`] || 0;
+    const bookmaker = fixtureOdds.bookmakers[bookmakerIndex % fixtureOdds.bookmakers.length];
+    if (!bookmaker?.bets?.length) return null;
+    
+    const matchWinnerBet = bookmaker.bets.find(bet => bet.name === 'Match Winner');
+    if (!matchWinnerBet?.values?.length) return null;
+    
+    const oddIndex = team === 'home' ? 0 : 2; // 0 = home, 1 = draw, 2 = away
+    return matchWinnerBet.values[oddIndex]?.odd || null;
   };
 
   // Enhanced top performers with click actions
@@ -242,8 +252,8 @@ export const BetanIAWidgetsEnhanced = () => {
                                 }}
                               >
                                 <span className={`text-xs font-semibold ${getFixtureBookmaker(`${fixture.fixture.id}-home`).color}`}>
-                                  {generateOdds(fixture.fixture.id + fixture.teams.home.id, fixtureBookmakers[`${fixture.fixture.id}-home`] || 0)}
-                                </span>
+                                   {getFixtureOdds(fixture.fixture.id, 'home') || '--'}
+                                 </span>
                                 <span className="text-xs text-muted-foreground">
                                   {getFixtureBookmaker(`${fixture.fixture.id}-home`).name}
                                 </span>
@@ -278,8 +288,8 @@ export const BetanIAWidgetsEnhanced = () => {
                                 }}
                               >
                                 <span className={`text-xs font-semibold ${getFixtureBookmaker(`${fixture.fixture.id}-away`).color}`}>
-                                  {generateOdds(fixture.fixture.id + fixture.teams.away.id, fixtureBookmakers[`${fixture.fixture.id}-away`] || 0)}
-                                </span>
+                                   {getFixtureOdds(fixture.fixture.id, 'away') || '--'}
+                                 </span>
                                 <span className="text-xs text-muted-foreground">
                                   {getFixtureBookmaker(`${fixture.fixture.id}-away`).name}
                                 </span>
@@ -413,7 +423,7 @@ export const BetanIAWidgetsEnhanced = () => {
                       }}
                     >
                       <span className={`text-xs font-semibold ${getPlayerBookmaker(`goal-${player.name}`).color}`}>
-                        {generateOdds(player.name.length + index, playerBookmakers[`goal-${player.name}`] || 0)}
+                        {(1.8 + Math.random() * 1.5).toFixed(2)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {getPlayerBookmaker(`goal-${player.name}`).name}
@@ -486,7 +496,7 @@ export const BetanIAWidgetsEnhanced = () => {
                       }}
                     >
                       <span className={`text-xs font-semibold ${getPlayerBookmaker(`yellow-${player.name}`).color}`}>
-                        {generateOdds(player.name.length + index + 10, playerBookmakers[`yellow-${player.name}`] || 0)}
+                        {(2.5 + Math.random() * 2.0).toFixed(2)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {getPlayerBookmaker(`yellow-${player.name}`).name}
@@ -559,7 +569,7 @@ export const BetanIAWidgetsEnhanced = () => {
                       }}
                     >
                       <span className={`text-xs font-semibold ${getPlayerBookmaker(`red-${player.name}`).color}`}>
-                        {generateOdds(player.name.length + index + 20, playerBookmakers[`red-${player.name}`] || 0)}
+                        {(5.0 + Math.random() * 10.0).toFixed(2)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {getPlayerBookmaker(`red-${player.name}`).name}

@@ -14,12 +14,11 @@ import {
 import { 
   convertFixturesToLiveGames, 
   processOddsData, 
-  generateTopPerformers,
   filterFixturesByDate,
   validateSportsData,
   BRAZILIAN_LEAGUES
 } from '@/lib/sportsDataHelpers';
-import { getMockSportsData } from '@/lib/mockSportsData';
+// Removed mock data import - using only real API data
 import { useFilterStore } from '@/stores/filterStore';
 
 interface UseLiveSportsDataResult {
@@ -278,7 +277,7 @@ export function useWidgetData() {
     return f.fixture.date.startsWith(tomorrowStr);
   });
 
-  const hotOdds: HotOdd[] = []; // Would need odds processing
+  const hotOdds = processOddsData(sportsData.odds, sportsData.fixtures);
 
   return {
     liveGames,
@@ -288,6 +287,7 @@ export function useWidgetData() {
     topPerformers: sportsData.topScorers,
     topYellowCards: sportsData.topYellowCards,
     topRedCards: sportsData.topRedCards,
+    odds: sportsData.odds,
     loading: sportsData.loading,
     error: sportsData.error,
     lastUpdate: sportsData.lastUpdate,

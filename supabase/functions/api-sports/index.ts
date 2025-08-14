@@ -125,6 +125,18 @@ serve(async (req) => {
         cacheDuration = 3600; // 1 hour
         break;
 
+      case 'odds-bookmakers':
+        apiUrl = 'https://v3.football.api-sports.io/odds/bookmakers';
+        cacheKey = `odds_bookmakers_${JSON.stringify(params)}`;
+        cacheDuration = 86400; // 24 hours
+        break;
+
+      case 'odds-bets':
+        apiUrl = 'https://v3.football.api-sports.io/odds/bets';
+        cacheKey = `odds_bets_${JSON.stringify(params)}`;
+        cacheDuration = 86400; // 24 hours
+        break;
+
       default:
         throw new Error(`Unknown endpoint: ${endpoint}`);
     }
