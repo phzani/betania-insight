@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Sparkles } from "lucide-react";
+import { User, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -25,12 +25,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, className }) 
         "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
         isUser 
           ? "bg-gradient-to-br from-slate-600 to-slate-800" 
-          : "bg-gradient-to-br from-pink-500 via-purple-600 to-blue-500"
+          : "bg-gradient-to-br from-blue-500 to-purple-600"
       )}>
         {isUser ? (
           <User className="w-4 h-4 text-white" />
         ) : (
-          <Sparkles className="w-4 h-4 text-white" />
+          <Zap className="w-4 h-4 text-white" />
         )}
       </div>
 

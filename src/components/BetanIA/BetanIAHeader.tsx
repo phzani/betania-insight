@@ -11,13 +11,13 @@ export const BetanIAHeader = () => {
         {/* Logo & Branding */}
         <div className="flex items-center gap-3">
           <div className="betania-glass p-2 betania-glow">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-500 via-purple-600 to-blue-500" />
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600" />
           </div>
           <div className="flex flex-col">
-            <h1 className="text-lg font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
-              BetanIA 💋
+            <h1 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              BetanIA
             </h1>
-            <p className="text-xs text-muted-foreground">Sua assistente esportiva favorita ✨</p>
+            <p className="text-xs text-muted-foreground">Análise Esportiva IA</p>
           </div>
         </div>
 
@@ -26,7 +26,7 @@ export const BetanIAHeader = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="O que você quer saber, gatinho? 😏" 
+              placeholder="Buscar times, jogos ou ligas..." 
               className="pl-10 betania-glass border-0 bg-white/[0.02] placeholder:text-muted-foreground/70"
             />
           </div>
@@ -35,9 +35,9 @@ export const BetanIAHeader = () => {
         {/* Controls */}
         <div className="flex items-center gap-3">
           {/* Active League */}
-          <Badge variant="secondary" className="betania-glass border-0 bg-pink-500/20 text-pink-300">
+          <Badge variant="secondary" className="betania-glass border-0 bg-blue-500/20 text-blue-300">
             <Globe className="w-3 h-3 mr-1" />
-            BR Série A 2024 🔥
+            BR Série A 2025
           </Badge>
 
           {/* Timezone */}

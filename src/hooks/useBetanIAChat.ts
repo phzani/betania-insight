@@ -22,7 +22,7 @@ export function useBetanIAChat(): UseBetanIAChatResult {
     {
       id: '1',
       type: 'assistant',
-      content: 'Oi lindão! 💋 Eu sou a BetanIA, sua assistente esportiva favorita! ✨ Pode me perguntar sobre jogos, times, odds... tudo que você quiser saber sobre futebol. Prometo que vou te dar as informações mais quentes! 🔥😘',
+      content: '👋 E aí! Sou o BetanIA, seu assistente de análise esportiva. Pode me perguntar sobre jogos, times, odds... Vamos nessa!',
       timestamp: new Date(),
     }
   ]);
@@ -84,7 +84,7 @@ export function useBetanIAChat(): UseBetanIAChatResult {
       const errorMsg: ChatMessage = {
         id: (Date.now() + 2).toString(),
         type: 'assistant', 
-        content: `Ai, que mico! 😅 Deu um probleminha aqui: ${errorMessage}\n\nTenta de novo, amor! Eu prometo que vou caprichar na resposta! 💅`,
+        content: `🚫 Ops! Deu erro aqui: ${errorMessage}\n\nTenta de novo ou reformula a pergunta!`,
         timestamp: new Date(),
       };
       
@@ -100,7 +100,7 @@ export function useBetanIAChat(): UseBetanIAChatResult {
       {
         id: '1',
         type: 'assistant',
-        content: 'Oi lindão! 💋 Eu sou a BetanIA, sua assistente esportiva favorita! ✨ Pode me perguntar sobre jogos, times, odds... tudo que você quiser saber sobre futebol. Prometo que vou te dar as informações mais quentes! 🔥😘',
+        content: '👋 E aí! Sou o BetanIA, seu assistente de análise esportiva. Pode me perguntar sobre jogos, times, odds... Vamos nessa!',
         timestamp: new Date(),
       }
     ]);
