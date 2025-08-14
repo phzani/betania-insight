@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { BetanIASidebar } from "./BetanIASidebar";
 import { BetanIAChat } from "./BetanIAChat";
 import { BetanIAWidgetsEnhanced } from "./BetanIAWidgetsEnhanced";
 import { BetanIAHeader } from "./BetanIAHeader";
-import { DebugDashboard } from "./DebugDashboard";
-import { LazyWidget } from "./LazyWidget";
 import { useFilterStore } from "@/stores/filterStore";
 import { useSportsDataV2 } from "@/hooks/useSportsDataV2";
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -12,14 +10,13 @@ import { ErrorBoundary } from "./ErrorBoundary";
 export const BetanIALayout = () => {
   const { updateData } = useFilterStore();
   const sportsData = useSportsDataV2();
-  const [showDebug, setShowDebug] = useState(false);
 
   // Update filter store when sports data changes
   useEffect(() => {
     if (sportsData.fixtures.length > 0) {
-      updateData(sportsData.fixtures, sportsData.leagues, sportsData.teams);
+      updateData(sportsData.fixtures, [], []);
     }
-  }, [sportsData.fixtures, sportsData.leagues, sportsData.teams, updateData]);
+  }, [sportsData.fixtures, updateData]);
 
   return (
     <div className="min-h-screen bg-background font-sans antialiased">
@@ -40,16 +37,11 @@ export const BetanIALayout = () => {
         
         {/* Right Widgets Panel */}
         <aside className="w-96 flex-shrink-0 border-l border-border/50 bg-card/50">
-          <LazyWidget priority="high">
-            <ErrorBoundary>
-              <BetanIAWidgetsEnhanced />
-            </ErrorBoundary>
-          </LazyWidget>
+          <ErrorBoundary>
+            <BetanIAWidgetsEnhanced />
+          </ErrorBoundary>
         </aside>
       </div>
-      
-      {/* Debug Dashboard */}
-      <DebugDashboard isVisible={showDebug} onToggle={() => setShowDebug(!showDebug)} />
     </div>
   );
 };
