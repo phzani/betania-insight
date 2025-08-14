@@ -18,6 +18,7 @@ import {
   validateSportsData,
   BRAZILIAN_LEAGUES
 } from '@/lib/sportsDataHelpers';
+import { getSeasonWithFallback } from '@/lib/seasonHelpers';
 // Removed mock data import - using only real API data
 import { useFilterStore } from '@/stores/filterStore';
 
@@ -66,8 +67,8 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       console.log(`[LiveSportsData] Starting data fetch for league: ${currentLeague}...`);
 
       const today = new Date().toISOString().split('T')[0];
-      // Use 2024 season for current data since 2025 hasn't started yet
-      const currentSeason = 2024;
+      // Use 2025 season as current
+      const currentSeason = 2025;
 
       // Helper to call Edge Function with GET
       const callApi = (p: Record<string, any>) => {
