@@ -84,33 +84,33 @@ export const BetanIAChat = () => {
       const leagueName = selectedLeague === 71 ? 'Brasileirão' : 
                         selectedLeague === 72 ? 'Série B' :
                         selectedLeague === 73 ? 'Copa do Brasil' : 'Libertadores';
-      return `Pergunte sobre o time no ${leagueName}...`;
+      return `Me pergunta sobre o time no ${leagueName}, amor! 😏`;
     }
     
     if (selectedTeam) {
-      return "Pergunte sobre estatísticas, próximos jogos do time...";
+      return "Quer saber dos perrengues do seu time, querido? 💅";
     }
     
     if (selectedLeague) {
       const leagueName = selectedLeague === 71 ? 'Brasileirão' : 
                         selectedLeague === 72 ? 'Série B' :
                         selectedLeague === 73 ? 'Copa do Brasil' : 'Libertadores';
-      return `Pergunte sobre ${leagueName}, tabela, artilheiros...`;
+      return `Fala do ${leagueName}, gatinho! Tô aqui pra isso 🔥`;
     }
     
     if (activeFilter === 'today') {
-      return "Pergunte sobre jogos de hoje, odds, análises...";
+      return "Jogos de hoje? Odds? Vai que a sorte tá do nosso lado! 💸";
     }
     
     if (activeFilter === 'live') {
-      return "Pergunte sobre jogos ao vivo, estatísticas em tempo real...";
+      return "Rolando ao vivo? Conta pra mim, gato! ⚽";
     }
     
     if (activeFilter === 'upcoming') {
-      return "Pergunte sobre próximos jogos, palpites, odds...";
+      return "Próximos jogos? Vou te dar umas dicas especiais 😘";
     }
     
-    return "Pergunte sobre jogos, times, odds, estatísticas...";
+    return "O que cê quer saber, lindão? Futebol é minha especialidade! ✨";
   };
 
   // Generate smart quick actions based on active filters
@@ -119,9 +119,9 @@ export const BetanIAChat = () => {
     
     // Actions based on selected team and league
     if (selectedTeam && selectedLeague) {
-      actions.push({ label: "Próximo jogo", message: "Quando é o próximo jogo do time?" });
+      actions.push({ label: "Próximo jogo 🔥", message: "Quando é o próximo jogo do time?" });
       actions.push({ label: "Posição na tabela", message: "Qual a posição do time na tabela?" });
-      actions.push({ label: "Estatísticas", message: "Estatísticas do time na temporada" });
+      actions.push({ label: "Estatísticas quentes 💅", message: "Estatísticas do time na temporada" });
       return actions;
     }
     
@@ -146,30 +146,30 @@ export const BetanIAChat = () => {
     
     // Actions based on active filter
     if (activeFilter === 'today') {
-      actions.push({ label: "Jogos hoje", message: "Análise dos jogos de hoje" });
-      actions.push({ label: "Melhores odds", message: "Melhores odds para hoje" });
-      actions.push({ label: "Palpites", message: "Palpites para os jogos de hoje" });
+      actions.push({ label: "Jogos hoje 🎯", message: "Análise dos jogos de hoje" });
+      actions.push({ label: "Odds especiais 💸", message: "Melhores odds para hoje" });
+      actions.push({ label: "Dicas da BetanIA 😘", message: "Palpites para os jogos de hoje" });
       return actions;
     }
     
     if (activeFilter === 'live') {
-      actions.push({ label: "Ao vivo", message: "Estatísticas dos jogos ao vivo" });
-      actions.push({ label: "Resultados", message: "Resultados em tempo real" });
-      actions.push({ label: "Gols", message: "Últimos gols marcados" });
+      actions.push({ label: "Ao vivo agora 🔴", message: "Estatísticas dos jogos ao vivo" });
+      actions.push({ label: "Placar quente", message: "Resultados em tempo real" });
+      actions.push({ label: "Gols fresquinhos ⚽", message: "Últimos gols marcados" });
       return actions;
     }
     
     if (activeFilter === 'upcoming') {
-      actions.push({ label: "Próximos", message: "Análise dos próximos jogos" });
-      actions.push({ label: "Odds", message: "Melhores odds para apostar" });
-      actions.push({ label: "Palpites", message: "Palpites para os próximos jogos" });
+      actions.push({ label: "Próximos jogos 🔮", message: "Análise dos próximos jogos" });
+      actions.push({ label: "Odds tentadoras", message: "Melhores odds para apostar" });
+      actions.push({ label: "Palpites especiais 💋", message: "Palpites para os próximos jogos" });
       return actions;
     }
     
     // Default actions when no filters are active
-    actions.push({ label: "Jogos hoje", message: "Jogos de hoje" });
-    actions.push({ label: "Ao vivo", message: "Jogos ao vivo" });
-    actions.push({ label: "Artilheiros", message: "Artilheiros do Brasileirão" });
+    actions.push({ label: "Jogos hoje 🌟", message: "Jogos de hoje" });
+    actions.push({ label: "Ao vivo 🎯", message: "Jogos ao vivo" });
+    actions.push({ label: "Artilheiros 👑", message: "Artilheiros do Brasileirão" });
     return actions;
   };
 
@@ -191,13 +191,13 @@ export const BetanIAChat = () => {
           
           {isLoading && (
             <div className="flex items-center gap-3 p-4 betania-glass max-w-md message-enter">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               </div>
               <div className="flex gap-1">
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse delay-100" />
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse delay-200" />
+                <div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse" />
+                <div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse delay-100" />
+                <div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse delay-200" />
               </div>
             </div>
           )}
