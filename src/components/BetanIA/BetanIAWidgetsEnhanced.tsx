@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Trophy, TrendingUp, Users, Calendar, RefreshCw, Zap, Clock, Star, Target, Award, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { RefreshButton } from "./RefreshButton";
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -448,11 +449,25 @@ export const BetanIAWidgetsEnhanced = () => {
                   </div>
                 </div>
                 ))}
-                {enhancedPerformers.length === 0 && (
-                  <div className="text-center py-2">
-                    <div className="text-xs text-muted-foreground">
-                      Carregando artilheiros...
+                {loading && enhancedPerformers.length === 0 && (
+                  <LoadingSkeleton type="player-stats" count={6} />
+                )}
+                {!loading && enhancedPerformers.length === 0 && (
+                  <div className="text-center py-4">
+                    <div className="w-8 h-8 rounded-full bg-muted/20 flex items-center justify-center mb-2 mx-auto">
+                      <Trophy className="h-4 w-4 text-muted-foreground" />
                     </div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Nenhum artilheiro encontrado
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={refresh}
+                      className="text-xs h-6"
+                    >
+                      Tentar novamente
+                    </Button>
                   </div>
                 )}
               </div>
@@ -529,11 +544,25 @@ export const BetanIAWidgetsEnhanced = () => {
                   </div>
                 </div>
                 ))}
-                {topYellowCards.length === 0 && (
-                  <div className="text-center py-2">
-                    <div className="text-xs text-muted-foreground">
-                      Carregando cartões amarelos...
+                {loading && topYellowCards.length === 0 && (
+                  <LoadingSkeleton type="player-stats" count={6} />
+                )}
+                {!loading && topYellowCards.length === 0 && (
+                  <div className="text-center py-4">
+                    <div className="w-8 h-8 rounded-full bg-muted/20 flex items-center justify-center mb-2 mx-auto">
+                      <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                     </div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Nenhum cartão encontrado
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={refresh}
+                      className="text-xs h-6"
+                    >
+                      Tentar novamente
+                    </Button>
                   </div>
                 )}
               </div>
@@ -610,11 +639,25 @@ export const BetanIAWidgetsEnhanced = () => {
                   </div>
                 </div>
                 ))}
-                {topRedCards.length === 0 && (
-                  <div className="text-center py-2">
-                    <div className="text-xs text-muted-foreground">
-                      Carregando cartões vermelhos...
+                {loading && topRedCards.length === 0 && (
+                  <LoadingSkeleton type="player-stats" count={6} />
+                )}
+                {!loading && topRedCards.length === 0 && (
+                  <div className="text-center py-4">
+                    <div className="w-8 h-8 rounded-full bg-muted/20 flex items-center justify-center mb-2 mx-auto">
+                      <Award className="h-4 w-4 text-muted-foreground" />
                     </div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Nenhum cartão encontrado
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={refresh}
+                      className="text-xs h-6"
+                    >
+                      Tentar novamente
+                    </Button>
                   </div>
                 )}
               </div>

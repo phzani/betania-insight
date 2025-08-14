@@ -122,22 +122,22 @@ serve(async (req) => {
         break;
 
       case 'topscorers':
-        apiUrl = 'https://v3.football.api-sports.io/players/topscorers';
-        cacheKey = `topscorers_${JSON.stringify(params)}`;
+      case 'topyellowcards':  
+      case 'topredcards':
         // Smart caching: 5 minutes during match days, 15 minutes otherwise
         const isMatchDay = isToday() && hasActiveMatches();
-        cacheDuration = isMatchDay ? 300 : 900; // 5 or 15 minutes
-        break;
-
-      case 'topyellowcards':
-        apiUrl = 'https://v3.football.api-sports.io/players/topyellowcards';
-        cacheKey = `topyellowcards_${JSON.stringify(params)}`;
-        cacheDuration = isMatchDay ? 300 : 900; // 5 or 15 minutes
-        break;
-
-      case 'topredcards':
-        apiUrl = 'https://v3.football.api-sports.io/players/topredcards';
-        cacheKey = `topredcards_${JSON.stringify(params)}`;
+        
+        if (endpoint === 'topscorers') {
+          apiUrl = 'https://v3.football.api-sports.io/players/topscorers';
+          cacheKey = `topscorers_${JSON.stringify(params)}`;
+        } else if (endpoint === 'topyellowcards') {
+          apiUrl = 'https://v3.football.api-sports.io/players/topyellowcards';
+          cacheKey = `topyellowcards_${JSON.stringify(params)}`;
+        } else if (endpoint === 'topredcards') {
+          apiUrl = 'https://v3.football.api-sports.io/players/topredcards';
+          cacheKey = `topredcards_${JSON.stringify(params)}`;
+        }
+        
         cacheDuration = isMatchDay ? 300 : 900; // 5 or 15 minutes
         break;
 
