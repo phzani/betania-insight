@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { useFilterStore } from "@/stores/filterStore";
 import { useWidgetData } from "@/hooks/useLiveSportsData";
 import { getMatchTime, formatTeamName } from "@/hooks/useLiveSportsData";
-import { getFixtureStatus, formatFixtureTime, getLeagueEmoji } from "@/lib/sportsDataHelpers";
+import { getFixtureStatus, formatFixtureTime, getLeagueEmoji, BRAZILIAN_LEAGUES } from "@/lib/sportsDataHelpers";
 
 export const BetanIAWidgetsEnhanced = () => {
   const {
@@ -29,6 +29,7 @@ export const BetanIAWidgetsEnhanced = () => {
     setSelectedTeam,
     setActiveFilter,
     selectedTeam,
+    selectedLeague,
     activeFilter,
     favoriteTeams,
     toggleFavoriteTeam
@@ -36,6 +37,22 @@ export const BetanIAWidgetsEnhanced = () => {
 
   // Get filtered fixtures based on current filters
   const filteredFixtures = getFilteredFixtures();
+  
+  // Get league name for display
+  const getLeagueName = (leagueId: number | null) => {
+    switch (leagueId) {
+      case BRAZILIAN_LEAGUES.SERIE_A:
+        return 'Brasileirão Série A';
+      case BRAZILIAN_LEAGUES.SERIE_B:
+        return 'Brasileirão Série B';
+      case BRAZILIAN_LEAGUES.COPA_BRASIL:
+        return 'Copa do Brasil';
+      case BRAZILIAN_LEAGUES.LIBERTADORES:
+        return 'Libertadores';
+      default:
+        return 'Todas as Competições';
+    }
+  };
 
   const handleRefresh = () => {
     console.log('[Widgets] Manual refresh triggered');
@@ -69,15 +86,20 @@ export const BetanIAWidgetsEnhanced = () => {
       {/* Header with refresh */}
       <div className="p-4 border-b border-border/30">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-muted-foreground">Dados Esportivos</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-muted-foreground">Dados Esportivos</h2>
+            {selectedTeam && (
+              <Badge variant="outline" className="text-xs">
+                Time Selecionado
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Badge 
-              variant={activeFilter ? "default" : "secondary"} 
-              className={`text-xs ${
-                activeFilter ? "bg-blue-500/20 text-blue-400 border-blue-500/30" : ""
-              }`}
+              variant="default"
+              className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30"
             >
-              {activeFilter ? `Filtro: ${activeFilter}` : 'Todos'}
+              {getLeagueName(selectedLeague)}
             </Badge>
             <span className="text-xs text-muted-foreground">
               {lastUpdate ? formatFixtureTime(lastUpdate.toISOString()) : '-'}
@@ -353,7 +375,7 @@ export const BetanIAWidgetsEnhanced = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-blue-400" />
-                <h3 className="text-sm font-semibold text-muted-foreground">Artilheiros</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground">Artilheiros - {getLeagueName(selectedLeague)}</h3>
               </div>
             </div>
             
@@ -401,7 +423,7 @@ export const BetanIAWidgetsEnhanced = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-400" />
-                <h3 className="text-sm font-semibold text-muted-foreground">Mais Cartões Amarelos</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground">Cartões Amarelos - {getLeagueName(selectedLeague)}</h3>
               </div>
             </div>
             
@@ -447,7 +469,7 @@ export const BetanIAWidgetsEnhanced = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Award className="h-4 w-4 text-red-400" />
-                <h3 className="text-sm font-semibold text-muted-foreground">Mais Cartões Vermelhos</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground">Cartões Vermelhos - {getLeagueName(selectedLeague)}</h3>
               </div>
             </div>
             

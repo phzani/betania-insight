@@ -54,13 +54,17 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Get selected league from filter store
+  const { selectedLeague } = useFilterStore();
 
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      console.log('[LiveSportsData] Starting comprehensive data fetch...');
+      const currentLeague = selectedLeague || BRAZILIAN_LEAGUES.SERIE_A;
+      console.log(`[LiveSportsData] Starting data fetch for league: ${currentLeague}...`);
 
       const today = new Date().toISOString().split('T')[0];
       const currentSeason = new Date().getFullYear();
@@ -81,7 +85,7 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
         }).then(r => r.json());
       };
 
-      // Parallel API calls for better performance
+      // Parallel API calls for better performance - using selected league
       const [
         todayFixturesResult,
         liveFixturesResult,
@@ -92,14 +96,14 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
         topYellowCardsResult,
         topRedCardsResult
       ] = await Promise.allSettled([
-        callApi({ endpoint: 'fixtures', date: today, league: BRAZILIAN_LEAGUES.SERIE_A, season: currentSeason }),
+        callApi({ endpoint: 'fixtures', date: today, league: currentLeague, season: currentSeason }),
         callApi({ endpoint: 'fixtures', live: 'all' }),
         callApi({ endpoint: 'leagues', country: 'Brazil' }),
-        callApi({ endpoint: 'odds-pre', league: BRAZILIAN_LEAGUES.SERIE_A, season: currentSeason }),
-        callApi({ endpoint: 'teams', league: BRAZILIAN_LEAGUES.SERIE_A, season: currentSeason }),
-        callApi({ endpoint: 'topscorers', league: BRAZILIAN_LEAGUES.SERIE_A, season: currentSeason }),
-        callApi({ endpoint: 'topyellowcards', league: BRAZILIAN_LEAGUES.SERIE_A, season: currentSeason }),
-        callApi({ endpoint: 'topredcards', league: BRAZILIAN_LEAGUES.SERIE_A, season: currentSeason }),
+        callApi({ endpoint: 'odds-pre', league: currentLeague, season: currentSeason }),
+        callApi({ endpoint: 'teams', league: currentLeague, season: currentSeason }),
+        callApi({ endpoint: 'topscorers', league: currentLeague, season: currentSeason }),
+        callApi({ endpoint: 'topyellowcards', league: currentLeague, season: currentSeason }),
+        callApi({ endpoint: 'topredcards', league: currentLeague, season: currentSeason }),
       ]);
 
       // Process results with error handling
@@ -148,26 +152,26 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       // Process top performers data
       const processedTopScorers = topScorersRaw.slice(0, 10).map((player: any) => ({
         name: player.player?.name || 'Unknown',
-        team: player.team?.name || 'Unknown',
+        team: player.statistics?.[0]?.team?.name || 'Unknown',
         stat: 'goals',
-        value: player.goals?.total || 0,
-        performance: Math.min(((player.goals?.total || 0) / 20) * 100, 100)
+        value: player.statistics?.[0]?.goals?.total || 0,
+        performance: Math.min(((player.statistics?.[0]?.goals?.total || 0) / 20) * 100, 100)
       }));
 
       const processedTopYellowCards = topYellowCardsRaw.slice(0, 10).map((player: any) => ({
         name: player.player?.name || 'Unknown',
-        team: player.team?.name || 'Unknown',
+        team: player.statistics?.[0]?.team?.name || 'Unknown',
         stat: 'yellow_cards',
-        value: player.cards?.yellow || 0,
-        performance: Math.min(((player.cards?.yellow || 0) / 10) * 100, 100)
+        value: player.statistics?.[0]?.cards?.yellow || 0,
+        performance: Math.min(((player.statistics?.[0]?.cards?.yellow || 0) / 10) * 100, 100)
       }));
 
       const processedTopRedCards = topRedCardsRaw.slice(0, 10).map((player: any) => ({
         name: player.player?.name || 'Unknown',
-        team: player.team?.name || 'Unknown',
+        team: player.statistics?.[0]?.team?.name || 'Unknown',
         stat: 'red_cards',
-        value: player.cards?.red || 0,
-        performance: Math.min(((player.cards?.red || 0) / 5) * 100, 100)
+        value: player.statistics?.[0]?.cards?.red || 0,
+        performance: Math.min(((player.statistics?.[0]?.cards?.red || 0) / 5) * 100, 100)
       }));
 
       console.log('[LiveSportsData] Setting processed data');
@@ -188,7 +192,7 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedLeague]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -196,20 +200,20 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
     setRefreshing(false);
   }, [fetchAllData]);
 
-  // Initial load
+  // Initial load and refresh when league changes
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
 
-  // Auto-refresh every 2 minutes
+  // Auto-refresh every 2 minutes for current league
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log('[LiveSportsData] Auto-refresh triggered');
+      console.log(`[LiveSportsData] Auto-refresh triggered for league: ${selectedLeague}`);
       fetchAllData();
     }, 2 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [fetchAllData]);
+  }, [fetchAllData, selectedLeague]);
 
   return {
     fixtures,
