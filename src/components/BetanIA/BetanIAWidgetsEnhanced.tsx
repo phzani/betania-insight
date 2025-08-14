@@ -24,10 +24,13 @@ const BOOKMAKERS = [
 
 export const BetanIAWidgetsEnhanced = () => {
   const {
+    liveGames,
     todayFixtures,
+    hotOdds,
     topScorers,
     topYellowCards,
     topRedCards,
+    odds,
     loading,
     error,
     lastUpdate,
@@ -115,6 +118,20 @@ export const BetanIAWidgetsEnhanced = () => {
     return BOOKMAKERS[index];
   };
 
+  const getFixtureOdds = (fixtureId: number, team: 'home' | 'away') => {
+    const fixtureOdds = odds.find(odd => odd.fixture.id === fixtureId);
+    if (!fixtureOdds?.bookmakers?.length) return null;
+    
+    const bookmakerIndex = fixtureBookmakers[`${fixtureId}-${team}`] || 0;
+    const bookmaker = fixtureOdds.bookmakers[bookmakerIndex % fixtureOdds.bookmakers.length];
+    if (!bookmaker?.bets?.length) return null;
+    
+    const matchWinnerBet = bookmaker.bets.find(bet => bet.name === 'Match Winner');
+    if (!matchWinnerBet?.values?.length) return null;
+    
+    const oddIndex = team === 'home' ? 0 : 2; // 0 = home, 1 = draw, 2 = away
+    return matchWinnerBet.values[oddIndex]?.odd || null;
+  };
 
   // Enhanced top performers with click actions
   const enhancedPerformers = topScorers.map((performer, index) => ({
@@ -233,6 +250,30 @@ export const BetanIAWidgetsEnhanced = () => {
                                 {fixture.goals.home ?? 0}
                               </span>
                             )}
+                            {!fixtureStatus.isFinished && (
+                              <div 
+                                className="flex items-center gap-1 cursor-pointer hover:bg-white/[0.05] px-1 rounded"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const bookmaker = getFixtureBookmaker(`${fixture.fixture.id}-home`);
+                                  window.open(bookmaker.url, '_blank');
+                                }}
+                              >
+                                <span className={`text-xs font-semibold ${getFixtureBookmaker(`${fixture.fixture.id}-home`).color}`}>
+                                   {getFixtureOdds(fixture.fixture.id, 'home') || '--'}
+                                 </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {getFixtureBookmaker(`${fixture.fixture.id}-home`).name}
+                                </span>
+                                <ChevronRight 
+                                  className="h-3 w-3 text-muted-foreground hover:text-foreground cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    rotateFixtureBookmaker(`${fixture.fixture.id}-home`);
+                                  }}
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
@@ -244,6 +285,30 @@ export const BetanIAWidgetsEnhanced = () => {
                               <span className="text-xs font-bold">
                                 {fixture.goals.away ?? 0}
                               </span>
+                            )}
+                            {!fixtureStatus.isFinished && (
+                              <div 
+                                className="flex items-center gap-1 cursor-pointer hover:bg-white/[0.05] px-1 rounded"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const bookmaker = getFixtureBookmaker(`${fixture.fixture.id}-away`);
+                                  window.open(bookmaker.url, '_blank');
+                                }}
+                              >
+                                <span className={`text-xs font-semibold ${getFixtureBookmaker(`${fixture.fixture.id}-away`).color}`}>
+                                   {getFixtureOdds(fixture.fixture.id, 'away') || '--'}
+                                 </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {getFixtureBookmaker(`${fixture.fixture.id}-away`).name}
+                                </span>
+                                <ChevronRight 
+                                  className="h-3 w-3 text-muted-foreground hover:text-foreground cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    rotateFixtureBookmaker(`${fixture.fixture.id}-away`);
+                                  }}
+                                />
+                              </div>
                             )}
                           </div>
                         </div>
@@ -264,6 +329,60 @@ export const BetanIAWidgetsEnhanced = () => {
           </CardContent>
         </Card>
 
+        {/* Hot Odds - Compact Widget */}
+        <Card className="betania-glass">
+          <CardHeader className="p-3 pb-2">
+            <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="h-3 w-3 text-yellow-400" />
+              Odds em Movimento
+              <Badge variant="secondary" className="text-xs h-4">{hotOdds.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <ScrollArea className="h-32 w-full">
+              <div className="space-y-1 pr-2">
+                {hotOdds.slice(0, 6).map((odd, index) => (
+                  <div 
+                    key={index} 
+                    onClick={() => handleGameClick(odd.fixtureId)}
+                    className="bg-white/[0.02] hover:bg-white/[0.04] p-2 rounded cursor-pointer transition-all"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium truncate flex-1">
+                        {odd.match}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-bold">
+                          {odd.odds.toFixed(2)}
+                        </span>
+                        <div className={`text-xs ${
+                          odd.trend === 'up' ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {odd.trend === 'up' ? '↗' : '↘'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground truncate flex-1">
+                        {odd.market}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {odd.bookmaker}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {hotOdds.length === 0 && (
+                  <div className="text-center py-2">
+                    <div className="text-xs text-muted-foreground">
+                      Sem odds em movimento
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
 
         {/* Top Scorers - Compact Widget */}
         <Card className="betania-glass">
@@ -553,7 +672,7 @@ export const BetanIAWidgetsEnhanced = () => {
         </Card>
 
         {/* No Data State */}
-        {!loading && filteredFixtures.length === 0 && (
+        {!loading && filteredFixtures.length === 0 && liveGames.length === 0 && (
           <Card className="betania-glass">
             <CardContent className="p-6 text-center">
               <div className="w-12 h-12 rounded-full bg-muted/20 flex items-center justify-center mb-3 mx-auto">
