@@ -117,19 +117,19 @@ export const BetanIAWidgetsEnhanced = () => {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 p-4 space-y-6">
+      <div className="flex-1 grid grid-cols-1 gap-3 p-4 overflow-hidden">
         {/* Error State */}
         {error && (
-          <Card className="betania-glass border-red-500/30 bg-red-500/10">
-            <CardContent className="p-3">
-              <div className="text-sm text-red-400">
+          <Card className="betania-glass border-red-500/30 bg-red-500/10 h-16">
+            <CardContent className="p-2">
+              <div className="text-xs text-red-400">
                 ⚠️ {error}
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleRefresh}
-                className="mt-2 text-xs h-6 text-red-400 hover:text-red-300"
+                className="mt-1 text-xs h-5 text-red-400 hover:text-red-300"
               >
                 Tentar novamente
               </Button>
@@ -137,117 +137,21 @@ export const BetanIAWidgetsEnhanced = () => {
           </Card>
         )}
 
-        {/* Live Games - Filtered by competition */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-            <h3 className="text-sm font-semibold text-red-400">Ao Vivo - {getLeagueName(selectedLeague)}</h3>
-            <Badge variant="secondary" className="text-xs">{liveGames.length}</Badge>
-          </div>
-          
-          {liveGames.length > 0 ? (
-            <ScrollArea className="h-64 w-full">
-              <div className="space-y-3 pr-4">
-                {liveGames.map((game) => (
-                <div 
-                  key={game.id} 
-                  onClick={() => handleGameClick(game.id)}
-                  className="betania-glass p-3 space-y-2 cursor-pointer hover:bg-white/[0.02] betania-glow transition-all"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-red-400 flex items-center gap-1">
-                      <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-                      <Zap className="h-3 w-3" />
-                      {game.minute}'
-                    </div>
-                    <Badge variant="outline" className="text-xs hover:bg-red-500/20">
-                      Ver detalhes
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-1 hover:text-blue-400"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTeamFavorite(game.home);
-                          }}
-                        >
-                          <span className="text-sm font-medium">
-                            {formatTeamName(game.home, 10)}
-                          </span>
-                        </Button>
-                        <span className="text-lg font-bold">
-                          {game.homeScore ?? 0}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-1 hover:text-blue-400"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTeamFavorite(game.away);
-                          }}
-                        >
-                          <span className="text-sm font-medium">
-                            {formatTeamName(game.away, 10)}
-                          </span>
-                        </Button>
-                        <span className="text-lg font-bold">
-                          {game.awayScore ?? 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {game.odds && (
-                    <div className="flex justify-between text-xs pt-2 border-t border-border/30">
-                      <span className="odds-positive px-2 py-1 rounded cursor-pointer hover:bg-green-500/20">
-                        1: {game.odds.home.toFixed(2)}
-                      </span>
-                      <span className="odds-neutral px-2 py-1 rounded cursor-pointer hover:bg-yellow-500/20">
-                        X: {game.odds.draw.toFixed(2)}
-                      </span>
-                      <span className="odds-negative px-2 py-1 rounded cursor-pointer hover:bg-red-500/20">
-                        2: {game.odds.away.toFixed(2)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                ))}
-              </div>
-            </ScrollArea>
-          ) : (
-            <div className="betania-glass p-4 text-center">
-              <div className="text-sm text-muted-foreground">
-                Não há jogos ao vivo desta competição no momento
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Today's Fixtures - Respects filters from sidebar */}
-        {filteredFixtures.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-blue-400" />
-              <h3 className="text-sm font-semibold text-muted-foreground">
-                {activeFilter === 'today' ? 'Jogos de Hoje' : 
-                 activeFilter === 'live' ? 'Jogos ao Vivo' :
-                 activeFilter === 'upcoming' ? 'Próximos Jogos' : 'Jogos Filtrados'}
-              </h3>
-              <Badge variant="secondary" className="text-xs">{filteredFixtures.length}</Badge>
-            </div>
-            
-            <ScrollArea className="h-80 w-full">
-              <div className="space-y-2 pr-4">
-                {filteredFixtures.slice(0, 10).map((fixture) => {
+        {/* Today's Fixtures - Compact Widget */}
+        <Card className="betania-glass">
+          <CardHeader className="p-3 pb-2">
+            <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+              <Calendar className="h-3 w-3 text-blue-400" />
+              {activeFilter === 'today' ? 'Jogos de Hoje' : 
+               activeFilter === 'live' ? 'Jogos ao Vivo' :
+               activeFilter === 'upcoming' ? 'Próximos Jogos' : 'Jogos'}
+              <Badge variant="secondary" className="text-xs h-4">{filteredFixtures.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <ScrollArea className="h-32 w-full">
+              <div className="space-y-1 pr-2">
+                {filteredFixtures.slice(0, 8).map((fixture) => {
                 const fixtureStatus = getFixtureStatus(fixture);
                 const leagueEmoji = getLeagueEmoji(fixture.league.id);
                 
@@ -255,16 +159,16 @@ export const BetanIAWidgetsEnhanced = () => {
                   <div 
                     key={fixture.fixture.id} 
                     onClick={() => handleGameClick(fixture.fixture.id)}
-                    className="betania-glass p-3 space-y-2 cursor-pointer hover:bg-white/[0.02] transition-all betania-glow"
+                    className="bg-white/[0.02] hover:bg-white/[0.04] p-2 rounded cursor-pointer transition-all"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-1">
                       <div className="text-xs text-muted-foreground flex items-center gap-1">
                         <span>{leagueEmoji}</span>
-                        <span>{fixture.league.name}</span>
+                        <span className="truncate max-w-20">{fixture.league.name}</span>
                       </div>
                       <Badge 
-                        variant={fixtureStatus.isLive ? "default" : "outline"} 
-                        className={`text-xs cursor-pointer ${
+                        variant="outline" 
+                        className={`text-xs h-4 ${
                           fixtureStatus.isLive ? "bg-red-500/20 text-red-400 border-red-500/30" : ""
                         }`}
                       >
@@ -273,279 +177,286 @@ export const BetanIAWidgetsEnhanced = () => {
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <div className="flex flex-col space-y-1 flex-1">
+                      <div className="flex flex-col space-y-0.5 flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-auto p-1 hover:text-blue-400"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTeamFavorite(fixture.teams.home.name);
-                            }}
-                          >
-                            <span className="text-sm font-medium">
-                              {formatTeamName(fixture.teams.home.name, 15)}
-                            </span>
-                          </Button>
+                          <span className="text-xs font-medium truncate">
+                            {formatTeamName(fixture.teams.home.name, 12)}
+                          </span>
                           {(fixtureStatus.isFinished || fixtureStatus.isLive) && (
-                            <span className="text-sm font-bold">
+                            <span className="text-xs font-bold ml-1">
                               {fixture.goals.home ?? 0}
                             </span>
                           )}
                         </div>
                         <div className="flex items-center justify-between">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-auto p-1 hover:text-blue-400"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTeamFavorite(fixture.teams.away.name);
-                            }}
-                          >
-                            <span className="text-sm font-medium">
-                              {formatTeamName(fixture.teams.away.name, 15)}
-                            </span>
-                          </Button>
+                          <span className="text-xs font-medium truncate">
+                            {formatTeamName(fixture.teams.away.name, 12)}
+                          </span>
                           {(fixtureStatus.isFinished || fixtureStatus.isLive) && (
-                            <span className="text-sm font-bold">
+                            <span className="text-xs font-bold ml-1">
                               {fixture.goals.away ?? 0}
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
-
-                    {fixture.fixture.venue?.name && (
-                      <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {fixture.fixture.venue.name}
-                      </div>
-                    )}
                   </div>
                 );
                 })}
-              </div>
-            </ScrollArea>
-          </div>
-        )}
-
-        {/* Hot Odds */}
-        {hotOdds.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-yellow-400" />
-              <h3 className="text-sm font-semibold text-muted-foreground">Odds em Movimento</h3>
-            </div>
-            
-            <div className="space-y-3">
-              {hotOdds.slice(0, 4).map((odd, index) => (
-                <div 
-                  key={index} 
-                  onClick={() => handleGameClick(odd.fixtureId)}
-                  className="betania-glass p-3 space-y-2 cursor-pointer hover:bg-white/[0.02] betania-glow transition-all"
-                >
-                  <div className="text-xs font-medium flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 text-xs font-medium hover:text-blue-400"
-                    >
-                      {odd.match}
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">{odd.market}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold cursor-pointer hover:text-blue-400">
-                        {odd.odds.toFixed(2)}
-                      </span>
-                      <div className={`flex items-center text-xs ${
-                        odd.trend === 'up' ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {odd.trend === 'up' ? '↗' : '↘'}
-                        {Math.abs(odd.change).toFixed(2)}
-                      </div>
+                {filteredFixtures.length === 0 && (
+                  <div className="text-center py-2">
+                    <div className="text-xs text-muted-foreground">
+                      Nenhum jogo encontrado
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {odd.bookmaker}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Top Scorers */}
-        {enhancedPerformers.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-blue-400" />
-                <h3 className="text-sm font-semibold text-muted-foreground">Artilheiros - {getLeagueName(selectedLeague)}</h3>
+                )}
               </div>
-            </div>
-            
-            <ScrollArea className="h-96 w-full">
-              <div className="space-y-3 pr-4">
-                {enhancedPerformers.slice(0, 10).map((player, index) => (
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        {/* Hot Odds - Compact Widget */}
+        <Card className="betania-glass">
+          <CardHeader className="p-3 pb-2">
+            <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="h-3 w-3 text-yellow-400" />
+              Odds em Movimento
+              <Badge variant="secondary" className="text-xs h-4">{hotOdds.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <ScrollArea className="h-32 w-full">
+              <div className="space-y-1 pr-2">
+                {hotOdds.slice(0, 6).map((odd, index) => (
+                  <div 
+                    key={index} 
+                    onClick={() => handleGameClick(odd.fixtureId)}
+                    className="bg-white/[0.02] hover:bg-white/[0.04] p-2 rounded cursor-pointer transition-all"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium truncate flex-1">
+                        {odd.match}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-bold">
+                          {odd.odds.toFixed(2)}
+                        </span>
+                        <div className={`text-xs ${
+                          odd.trend === 'up' ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {odd.trend === 'up' ? '↗' : '↘'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground truncate flex-1">
+                        {odd.market}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {odd.bookmaker}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {hotOdds.length === 0 && (
+                  <div className="text-center py-2">
+                    <div className="text-xs text-muted-foreground">
+                      Sem odds em movimento
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        {/* Top Scorers - Compact Widget */}
+        <Card className="betania-glass">
+          <CardHeader className="p-3 pb-2">
+            <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+              <Trophy className="h-3 w-3 text-blue-400" />
+              Artilheiros - {getLeagueName(selectedLeague)}
+              <Badge variant="secondary" className="text-xs h-4">{enhancedPerformers.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <ScrollArea className="h-40 w-full">
+              <div className="space-y-1 pr-2">
+                {enhancedPerformers.slice(0, 8).map((player, index) => (
                 <div 
                   key={index} 
                   onClick={() => handlePlayerClick(player.name, player.team)}
-                  className={`betania-glass p-3 space-y-3 cursor-pointer transition-all betania-glow hover:bg-white/[0.02] ${
-                    player.isTeamSelected ? 'ring-1 ring-blue-400/50' : ''
+                  className={`bg-white/[0.02] hover:bg-white/[0.04] p-2 rounded cursor-pointer transition-all ${
+                    player.isTeamSelected ? 'ring-1 ring-blue-400/30' : ''
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center">
-                        <Trophy className="h-4 w-4 text-white" />
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center flex-shrink-0">
+                        <Trophy className="h-3 w-3 text-white" />
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-sm">{player.name}</span>
-                        <span className="text-xs text-muted-foreground">{formatTeamName(player.team)}</span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-semibold text-xs truncate">{player.name}</span>
+                        <span className="text-xs text-muted-foreground truncate">{formatTeamName(player.team, 15)}</span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end">
-                      <span className="font-bold text-lg">{player.value}</span>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <span className="font-bold text-sm">{player.value}</span>
                       <span className="text-xs text-muted-foreground">gols</span>
                     </div>
                   </div>
                   
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span>Performance</span>
-                      <span>{Math.round(player.performance)}%</span>
-                    </div>
-                    <Progress value={player.performance} className="h-1" />
+                  <div className="mt-1">
+                    <Progress 
+                      value={player.performance || 75} 
+                      className="h-1 bg-muted/30"
+                    />
                   </div>
                 </div>
                 ))}
+                {enhancedPerformers.length === 0 && (
+                  <div className="text-center py-2">
+                    <div className="text-xs text-muted-foreground">
+                      Carregando artilheiros...
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollArea>
-          </div>
-        )}
+          </CardContent>
+        </Card>
 
-        {/* Top Yellow Cards */}
-        {topYellowCards.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-yellow-400" />
-                <h3 className="text-sm font-semibold text-muted-foreground">Cartões Amarelos - {getLeagueName(selectedLeague)}</h3>
-              </div>
-            </div>
-            
-            <ScrollArea className="h-80 w-full">
-              <div className="space-y-3 pr-4">
-                {topYellowCards.slice(0, 10).map((player, index) => (
+        {/* Top Yellow Cards - Compact Widget */}
+        <Card className="betania-glass">
+          <CardHeader className="p-3 pb-2">
+            <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+              <AlertTriangle className="h-3 w-3 text-yellow-400" />
+              Cartões Amarelos - {getLeagueName(selectedLeague)}
+              <Badge variant="secondary" className="text-xs h-4">{topYellowCards.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <ScrollArea className="h-40 w-full">
+              <div className="space-y-1 pr-2">
+                {topYellowCards.slice(0, 8).map((player, index) => (
                 <div 
                   key={index} 
                   onClick={() => handlePlayerClick(player.name, player.team)}
-                  className="betania-glass p-3 space-y-3 cursor-pointer transition-all betania-glow hover:bg-white/[0.02]"
+                  className="bg-white/[0.02] hover:bg-white/[0.04] p-2 rounded cursor-pointer transition-all"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
-                        <AlertTriangle className="h-4 w-4 text-black" />
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center flex-shrink-0">
+                        <AlertTriangle className="h-3 w-3 text-black" />
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-sm">{player.name}</span>
-                        <span className="text-xs text-muted-foreground">{formatTeamName(player.team)}</span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-semibold text-xs truncate">{player.name}</span>
+                        <span className="text-xs text-muted-foreground truncate">{formatTeamName(player.team, 15)}</span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end">
-                      <span className="font-bold text-lg">{player.value}</span>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <span className="font-bold text-sm">{player.value}</span>
                       <span className="text-xs text-muted-foreground">cartões</span>
                     </div>
                   </div>
                   
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span>Performance</span>
-                      <span>{Math.round(player.performance)}%</span>
-                    </div>
-                    <Progress value={player.performance} className="h-1" />
+                  <div className="mt-1">
+                    <Progress 
+                      value={player.performance || 65} 
+                      className="h-1 bg-muted/30"
+                    />
                   </div>
                 </div>
                 ))}
+                {topYellowCards.length === 0 && (
+                  <div className="text-center py-2">
+                    <div className="text-xs text-muted-foreground">
+                      Carregando cartões amarelos...
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollArea>
-          </div>
-        )}
+          </CardContent>
+        </Card>
 
-        {/* Top Red Cards */}
-        {topRedCards.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Award className="h-4 w-4 text-red-400" />
-                <h3 className="text-sm font-semibold text-muted-foreground">Cartões Vermelhos - {getLeagueName(selectedLeague)}</h3>
-              </div>
-            </div>
-            
-            <ScrollArea className="h-80 w-full">
-              <div className="space-y-3 pr-4">
-                {topRedCards.slice(0, 10).map((player, index) => (
+        {/* Top Red Cards - Compact Widget */}
+        <Card className="betania-glass">
+          <CardHeader className="p-3 pb-2">
+            <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+              <Award className="h-3 w-3 text-red-400" />
+              Cartões Vermelhos - {getLeagueName(selectedLeague)}
+              <Badge variant="secondary" className="text-xs h-4">{topRedCards.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <ScrollArea className="h-40 w-full">
+              <div className="space-y-1 pr-2">
+                {topRedCards.slice(0, 8).map((player, index) => (
                 <div 
                   key={index} 
                   onClick={() => handlePlayerClick(player.name, player.team)}
-                  className="betania-glass p-3 space-y-3 cursor-pointer transition-all betania-glow hover:bg-white/[0.02]"
+                  className="bg-white/[0.02] hover:bg-white/[0.04] p-2 rounded cursor-pointer transition-all"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center">
-                        <Award className="h-4 w-4 text-white" />
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center flex-shrink-0">
+                        <Award className="h-3 w-3 text-white" />
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-sm">{player.name}</span>
-                        <span className="text-xs text-muted-foreground">{formatTeamName(player.team)}</span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-semibold text-xs truncate">{player.name}</span>
+                        <span className="text-xs text-muted-foreground truncate">{formatTeamName(player.team, 15)}</span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end">
-                      <span className="font-bold text-lg">{player.value}</span>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <span className="font-bold text-sm">{player.value}</span>
                       <span className="text-xs text-muted-foreground">cartões</span>
                     </div>
                   </div>
                   
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span>Performance</span>
-                      <span>{Math.round(player.performance)}%</span>
-                    </div>
-                    <Progress value={player.performance} className="h-1" />
+                  <div className="mt-1">
+                    <Progress 
+                      value={player.performance || 45} 
+                      className="h-1 bg-muted/30"
+                    />
                   </div>
                 </div>
                 ))}
+                {topRedCards.length === 0 && (
+                  <div className="text-center py-2">
+                    <div className="text-xs text-muted-foreground">
+                      Carregando cartões vermelhos...
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollArea>
-          </div>
-        )}
+          </CardContent>
+        </Card>
 
         {/* No Data State */}
         {!loading && filteredFixtures.length === 0 && liveGames.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
-              <Calendar className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Nenhum jogo encontrado</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Não há jogos para os filtros selecionados hoje.
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setActiveFilter(null)}
-              className="text-xs"
-            >
-              Limpar filtros
-            </Button>
-          </div>
+          <Card className="betania-glass">
+            <CardContent className="p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-muted/20 flex items-center justify-center mb-3 mx-auto">
+                <Calendar className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="text-sm font-semibold mb-2">Nenhum jogo encontrado</h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                Não há jogos para os filtros selecionados hoje.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setActiveFilter(null)}
+                className="text-xs h-6"
+              >
+                Limpar filtros
+              </Button>
+            </CardContent>
+          </Card>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 };

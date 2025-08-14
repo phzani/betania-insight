@@ -237,30 +237,68 @@ export const BetanIASidebar = () => {
             ))}
           </div>
           
-          {/* Add Team to Favorites */}
+          {/* Live Games Widget */}
           <div className="mt-4 pt-4 border-t border-border/30">
-            <div className="text-xs text-muted-foreground mb-2">Times disponíveis:</div>
-            <div className="max-h-32 overflow-y-auto space-y-1">
-              {sportsData.teams.slice(0, 10).map((team) => (
-                <Button
-                  key={`team-${team.id}`}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleFavoriteTeam(team.id)}
-                  disabled={favoriteTeams.includes(team.id)}
-                  className="w-full justify-between text-xs h-8 px-2"
-                >
-                  <span>{formatTeamName(team.name)}</span>
-                  <Star 
-                    className={`h-3 w-3 ${
-                      favoriteTeams.includes(team.id) 
-                        ? 'fill-yellow-400 text-yellow-400' 
-                        : 'text-muted-foreground'
-                    }`} 
-                  />
-                </Button>
-              ))}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+              <h4 className="text-xs font-semibold text-red-400">Ao Vivo</h4>
+              <Badge variant="secondary" className="text-xs h-4">
+                {sportsData.fixtures?.filter(f => 
+                  (selectedLeague ? f.league.id === selectedLeague : true) &&
+                  f.fixture.status.short === 'LIVE'
+                ).length || 0}
+              </Badge>
             </div>
+            <ScrollArea className="h-48 w-full">
+              <div className="space-y-2 pr-2">
+                {(sportsData.fixtures?.filter(f => 
+                  (selectedLeague ? f.league.id === selectedLeague : true) &&
+                  f.fixture.status.short === 'LIVE'
+                ) || []).slice(0, 8).map((fixture) => (
+                  <div key={fixture.fixture.id} className="betania-glass p-2 space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1">
+                        <div className="w-1 h-1 bg-red-400 rounded-full animate-pulse" />
+                        <span className="text-red-400">{fixture.fixture.status.elapsed}'</span>
+                      </div>
+                      <span className="text-muted-foreground truncate max-w-16">
+                        {fixture.league.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col space-y-0.5 flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium truncate">
+                            {formatTeamName(fixture.teams.home.name, 12)}
+                          </span>
+                          <span className="text-sm font-bold ml-1">
+                            {fixture.goals.home ?? 0}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium truncate">
+                            {formatTeamName(fixture.teams.away.name, 12)}
+                          </span>
+                          <span className="text-sm font-bold ml-1">
+                            {fixture.goals.away ?? 0}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {(!sportsData.fixtures?.filter(f => 
+                  (selectedLeague ? f.league.id === selectedLeague : true) &&
+                  f.fixture.status.short === 'LIVE'
+                ).length) && (
+                  <div className="betania-glass p-3 text-center">
+                    <div className="text-xs text-muted-foreground">
+                      Nenhum jogo ao vivo no momento
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           </div>
         </div>
       </ScrollArea>
