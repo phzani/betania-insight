@@ -1,5 +1,5 @@
 import React from "react";
-import { Trophy, TrendingUp, Users, Calendar, BarChart3, RefreshCw, Zap, Clock, Star, Target, Award } from "lucide-react";
+import { Trophy, TrendingUp, Users, Calendar, RefreshCw, Zap, Clock, Star, Target, Award, AlertTriangle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,8 @@ export const BetanIAWidgetsEnhanced = () => {
     todayFixtures,
     hotOdds,
     topPerformers,
+    topYellowCards,
+    topRedCards,
     loading,
     error,
     lastUpdate,
@@ -43,7 +45,6 @@ export const BetanIAWidgetsEnhanced = () => {
   const handlePlayerClick = (playerName: string, teamName: string) => {
     // Find team ID and set as filter
     console.log(`[Widgets] Player clicked: ${playerName} (${teamName})`);
-    // This would need team mapping logic
     setActiveFilter('today'); // Show today's games for the team
   };
 
@@ -53,7 +54,6 @@ export const BetanIAWidgetsEnhanced = () => {
   };
 
   const handleTeamFavorite = (teamName: string) => {
-    // This would need team ID mapping
     console.log(`[Widgets] Toggle favorite for: ${teamName}`);
   };
 
@@ -114,49 +114,6 @@ export const BetanIAWidgetsEnhanced = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* API Status - Clickable */}
-        <Card className="betania-glass border-0 cursor-pointer hover:bg-white/[0.02] transition-colors">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <BarChart3 className="h-4 w-4 text-blue-400" />
-              Status da API
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button
-              variant="ghost"
-              onClick={() => setActiveFilter('today')}
-              className="w-full justify-between text-xs h-auto p-2 hover:bg-blue-500/10"
-            >
-              <span>Jogos de Hoje:</span>
-              <Badge variant={loading ? "secondary" : "outline"} className="text-xs">
-                {loading ? "Carregando..." : todayFixtures.length}
-              </Badge>
-            </Button>
-            
-            <Button
-              variant="ghost"
-              onClick={() => setActiveFilter('live')}
-              className="w-full justify-between text-xs h-auto p-2 hover:bg-red-500/10"
-            >
-              <span>Jogos ao Vivo:</span>
-              <Badge 
-                variant={liveGames.length > 0 ? "default" : "outline"} 
-                className={`text-xs ${liveGames.length > 0 ? "bg-red-500/20 text-red-400" : ""}`}
-              >
-                {liveGames.length}
-              </Badge>
-            </Button>
-            
-            <div className="flex justify-between text-xs pt-2 border-t border-border/30">
-              <span>Última Atualização:</span>
-              <span className="text-muted-foreground">
-                {lastUpdate ? getMatchTime(lastUpdate) : '-'}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Live Games - Clickable */}
         {liveGames.length > 0 && (
@@ -245,7 +202,7 @@ export const BetanIAWidgetsEnhanced = () => {
           </div>
         )}
 
-        {/* Today's Fixtures - Clickable */}
+        {/* Today's Fixtures - Respects filters from sidebar */}
         {filteredFixtures.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -342,7 +299,7 @@ export const BetanIAWidgetsEnhanced = () => {
           </div>
         )}
 
-        {/* Hot Odds - Clickable */}
+        {/* Hot Odds */}
         {hotOdds.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -390,7 +347,7 @@ export const BetanIAWidgetsEnhanced = () => {
           </div>
         )}
 
-        {/* Top Performers - Clickable */}
+        {/* Top Scorers */}
         {enhancedPerformers.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -398,14 +355,6 @@ export const BetanIAWidgetsEnhanced = () => {
                 <Trophy className="h-4 w-4 text-blue-400" />
                 <h3 className="text-sm font-semibold text-muted-foreground">Artilheiros</h3>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setActiveFilter('upcoming')}
-                className="text-xs h-6 text-blue-400 hover:text-blue-300"
-              >
-                Ver todos →
-              </Button>
             </div>
             
             <div className="space-y-3">
@@ -419,57 +368,24 @@ export const BetanIAWidgetsEnhanced = () => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        <Award className="h-3 w-3 text-yellow-400" />
-                        <span className="text-xs font-bold text-yellow-400">
-                          #{player.position}
-                        </span>
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center">
+                        <Trophy className="h-4 w-4 text-white" />
                       </div>
-                      <div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-0 font-medium text-sm hover:text-blue-400"
-                        >
-                          {player.name}
-                        </Button>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTeamFavorite(player.team);
-                            }}
-                            className="h-auto p-0 text-xs text-muted-foreground hover:text-blue-400"
-                          >
-                            {player.team}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTeamFavorite(player.team);
-                            }}
-                            className="h-4 w-4 p-0 hover:text-yellow-400"
-                          >
-                            <Star className="h-3 w-3" />
-                          </Button>
-                        </div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">{player.name}</span>
+                        <span className="text-xs text-muted-foreground">{formatTeamName(player.team)}</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-sm text-blue-400 cursor-pointer hover:text-blue-300">
-                        {player.stat}
-                      </div>
+                    <div className="flex flex-col items-end">
+                      <span className="font-bold text-lg">{player.value}</span>
+                      <span className="text-xs text-muted-foreground">gols</span>
                     </div>
                   </div>
                   
                   <div className="space-y-1">
-                    <div className="flex justify-between text-xs">
+                    <div className="flex justify-between items-center text-xs">
                       <span>Performance</span>
-                      <span className="font-medium">{player.performance}%</span>
+                      <span>{Math.round(player.performance)}%</span>
                     </div>
                     <Progress value={player.performance} className="h-1" />
                   </div>
@@ -479,71 +395,116 @@ export const BetanIAWidgetsEnhanced = () => {
           </div>
         )}
 
-        {/* AI Insights - Clickable */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full animate-pulse" />
-            <h3 className="text-sm font-semibold text-muted-foreground">Insights BetanIA</h3>
-          </div>
-          
-          <div className="betania-glass p-4 space-y-2 cursor-pointer hover:bg-white/[0.02] betania-glow transition-all">
-            <div className="text-sm font-medium text-purple-400">💡 Análise do Momento</div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {loading ? (
-                "Analisando dados em tempo real..."
-              ) : (
-                `${filteredFixtures.length} jogos ${activeFilter ? 'filtrados' : 'programados hoje'}. ${liveGames.length} partidas ao vivo. Dados atualizados ${getMatchTime(lastUpdate || new Date())}.`
-              )}
-            </p>
-            {!loading && (
-              <div className="flex justify-between items-center mt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRefresh}
-                  className="text-xs h-6 text-purple-400 hover:text-purple-300"
-                >
-                  Atualizar análise
-                </Button>
-                <Badge 
-                  variant="outline" 
-                  className="text-xs text-purple-400 border-purple-400/30 cursor-pointer hover:bg-purple-500/10"
-                >
-                  Auto 2min
-                </Badge>
+        {/* Top Yellow Cards */}
+        {topYellowCards.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                <h3 className="text-sm font-semibold text-muted-foreground">Mais Cartões Amarelos</h3>
               </div>
-            )}
+            </div>
+            
+            <div className="space-y-3">
+              {topYellowCards.slice(0, 5).map((player, index) => (
+                <div 
+                  key={index} 
+                  onClick={() => handlePlayerClick(player.name, player.team)}
+                  className="betania-glass p-3 space-y-3 cursor-pointer transition-all betania-glow hover:bg-white/[0.02]"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
+                        <AlertTriangle className="h-4 w-4 text-black" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">{player.name}</span>
+                        <span className="text-xs text-muted-foreground">{formatTeamName(player.team)}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="font-bold text-lg">{player.value}</span>
+                      <span className="text-xs text-muted-foreground">cartões</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span>Performance</span>
+                      <span>{Math.round(player.performance)}%</span>
+                    </div>
+                    <Progress value={player.performance} className="h-1" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Top Red Cards */}
+        {topRedCards.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Award className="h-4 w-4 text-red-400" />
+                <h3 className="text-sm font-semibold text-muted-foreground">Mais Cartões Vermelhos</h3>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              {topRedCards.slice(0, 5).map((player, index) => (
+                <div 
+                  key={index} 
+                  onClick={() => handlePlayerClick(player.name, player.team)}
+                  className="betania-glass p-3 space-y-3 cursor-pointer transition-all betania-glow hover:bg-white/[0.02]"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center">
+                        <Award className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">{player.name}</span>
+                        <span className="text-xs text-muted-foreground">{formatTeamName(player.team)}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="font-bold text-lg">{player.value}</span>
+                      <span className="text-xs text-muted-foreground">cartões</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span>Performance</span>
+                      <span>{Math.round(player.performance)}%</span>
+                    </div>
+                    <Progress value={player.performance} className="h-1" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* No Data State */}
         {!loading && filteredFixtures.length === 0 && liveGames.length === 0 && (
-          <div className="betania-glass p-6 text-center space-y-3">
-            <div className="text-4xl">⚽</div>
-            <div className="text-sm text-muted-foreground">
-              {activeFilter 
-                ? `Nenhum jogo encontrado para o filtro: ${activeFilter}`
-                : "Nenhum jogo encontrado para hoje"
-              }
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+              <Calendar className="h-8 w-8 text-muted-foreground" />
             </div>
-            <div className="flex gap-2 justify-center">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveFilter(null)}
-                className="text-xs"
-              >
-                Limpar filtros
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleRefresh}
-                className="text-xs"
-              >
-                Atualizar dados
-              </Button>
-            </div>
+            <h3 className="text-lg font-semibold mb-2">Nenhum jogo encontrado</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Não há jogos para os filtros selecionados hoje.
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setActiveFilter(null)}
+              className="text-xs"
+            >
+              Limpar filtros
+            </Button>
           </div>
         )}
       </ScrollArea>

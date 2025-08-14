@@ -243,7 +243,7 @@ export const BetanIASidebar = () => {
             <div className="max-h-32 overflow-y-auto space-y-1">
               {sportsData.teams.slice(0, 10).map((team) => (
                 <Button
-                  key={team.id}
+                  key={`team-${team.id}`}
                   variant="ghost"
                   size="sm"
                   onClick={() => toggleFavoriteTeam(team.id)}

@@ -113,6 +113,18 @@ serve(async (req) => {
         cacheDuration = 3600; // 1 hour
         break;
 
+      case 'topyellowcards':
+        apiUrl = 'https://v3.football.api-sports.io/players/topyellowcards';
+        cacheKey = `topyellowcards_${JSON.stringify(params)}`;
+        cacheDuration = 3600; // 1 hour
+        break;
+
+      case 'topredcards':
+        apiUrl = 'https://v3.football.api-sports.io/players/topredcards';
+        cacheKey = `topredcards_${JSON.stringify(params)}`;
+        cacheDuration = 3600; // 1 hour
+        break;
+
       default:
         throw new Error(`Unknown endpoint: ${endpoint}`);
     }
