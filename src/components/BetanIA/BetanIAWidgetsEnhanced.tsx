@@ -137,17 +137,18 @@ export const BetanIAWidgetsEnhanced = () => {
           </Card>
         )}
 
-        {/* Live Games - Clickable */}
-        {liveGames.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-              <h3 className="text-sm font-semibold text-red-400">Ao Vivo</h3>
-              <Badge variant="secondary" className="text-xs">{liveGames.length}</Badge>
-            </div>
-            
-            <div className="space-y-3">
-              {liveGames.slice(0, 3).map((game) => (
+        {/* Live Games - Filtered by competition */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+            <h3 className="text-sm font-semibold text-red-400">Ao Vivo - {getLeagueName(selectedLeague)}</h3>
+            <Badge variant="secondary" className="text-xs">{liveGames.length}</Badge>
+          </div>
+          
+          {liveGames.length > 0 ? (
+            <ScrollArea className="h-64 w-full">
+              <div className="space-y-3 pr-4">
+                {liveGames.map((game) => (
                 <div 
                   key={game.id} 
                   onClick={() => handleGameClick(game.id)}
@@ -219,10 +220,17 @@ export const BetanIAWidgetsEnhanced = () => {
                     </div>
                   )}
                 </div>
-              ))}
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <div className="betania-glass p-4 text-center">
+              <div className="text-sm text-muted-foreground">
+                Não há jogos ao vivo desta competição no momento
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Today's Fixtures - Respects filters from sidebar */}
         {filteredFixtures.length > 0 && (
@@ -237,8 +245,9 @@ export const BetanIAWidgetsEnhanced = () => {
               <Badge variant="secondary" className="text-xs">{filteredFixtures.length}</Badge>
             </div>
             
-            <div className="space-y-2">
-              {filteredFixtures.slice(0, 5).map((fixture) => {
+            <ScrollArea className="h-80 w-full">
+              <div className="space-y-2 pr-4">
+                {filteredFixtures.slice(0, 10).map((fixture) => {
                 const fixtureStatus = getFixtureStatus(fixture);
                 const leagueEmoji = getLeagueEmoji(fixture.league.id);
                 
@@ -316,8 +325,9 @@ export const BetanIAWidgetsEnhanced = () => {
                     )}
                   </div>
                 );
-              })}
-            </div>
+                })}
+              </div>
+            </ScrollArea>
           </div>
         )}
 
@@ -379,8 +389,9 @@ export const BetanIAWidgetsEnhanced = () => {
               </div>
             </div>
             
-            <div className="space-y-3">
-              {enhancedPerformers.slice(0, 5).map((player, index) => (
+            <ScrollArea className="h-96 w-full">
+              <div className="space-y-3 pr-4">
+                {enhancedPerformers.slice(0, 10).map((player, index) => (
                 <div 
                   key={index} 
                   onClick={() => handlePlayerClick(player.name, player.team)}
@@ -412,8 +423,9 @@ export const BetanIAWidgetsEnhanced = () => {
                     <Progress value={player.performance} className="h-1" />
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         )}
 
@@ -427,8 +439,9 @@ export const BetanIAWidgetsEnhanced = () => {
               </div>
             </div>
             
-            <div className="space-y-3">
-              {topYellowCards.slice(0, 5).map((player, index) => (
+            <ScrollArea className="h-80 w-full">
+              <div className="space-y-3 pr-4">
+                {topYellowCards.slice(0, 10).map((player, index) => (
                 <div 
                   key={index} 
                   onClick={() => handlePlayerClick(player.name, player.team)}
@@ -458,8 +471,9 @@ export const BetanIAWidgetsEnhanced = () => {
                     <Progress value={player.performance} className="h-1" />
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         )}
 
@@ -473,8 +487,9 @@ export const BetanIAWidgetsEnhanced = () => {
               </div>
             </div>
             
-            <div className="space-y-3">
-              {topRedCards.slice(0, 5).map((player, index) => (
+            <ScrollArea className="h-80 w-full">
+              <div className="space-y-3 pr-4">
+                {topRedCards.slice(0, 10).map((player, index) => (
                 <div 
                   key={index} 
                   onClick={() => handlePlayerClick(player.name, player.team)}
@@ -504,8 +519,9 @@ export const BetanIAWidgetsEnhanced = () => {
                     <Progress value={player.performance} className="h-1" />
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         )}
 

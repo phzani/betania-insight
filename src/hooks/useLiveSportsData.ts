@@ -97,7 +97,7 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
         topRedCardsResult
       ] = await Promise.allSettled([
         callApi({ endpoint: 'fixtures', date: today, league: currentLeague, season: currentSeason }),
-        callApi({ endpoint: 'fixtures', live: 'all' }),
+        callApi({ endpoint: 'fixtures', live: 'all', league: currentLeague, season: currentSeason }),
         callApi({ endpoint: 'leagues', country: 'Brazil' }),
         callApi({ endpoint: 'odds-pre', league: currentLeague, season: currentSeason }),
         callApi({ endpoint: 'teams', league: currentLeague, season: currentSeason }),
@@ -237,7 +237,7 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
  */
 export function useWidgetData() {
   const sportsData = useLiveSportsData();
-  const { updateData } = useFilterStore();
+  const { updateData, selectedLeague } = useFilterStore();
 
   useEffect(() => {
     if (sportsData.fixtures.length > 0) {
@@ -245,9 +245,13 @@ export function useWidgetData() {
     }
   }, [sportsData.fixtures, sportsData.leagues, sportsData.teams, updateData]);
   
-  // Process live games from fixtures
+  // Process live games from fixtures - filtered by selected league
   const liveGames = sportsData.fixtures
-    .filter(f => ['1H', '2H', 'HT', 'LIVE'].includes(f.fixture.status.short))
+    .filter(f => {
+      const isLive = ['1H', '2H', 'HT', 'LIVE'].includes(f.fixture.status.short);
+      const matchesLeague = !selectedLeague || f.league.id === selectedLeague;
+      return isLive && matchesLeague;
+    })
     .map(f => ({
       id: f.fixture.id,
       home: f.teams.home.name,
