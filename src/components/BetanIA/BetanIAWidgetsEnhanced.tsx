@@ -142,9 +142,9 @@ export const BetanIAWidgetsEnhanced = () => {
           <CardHeader className="p-3 pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
               <Calendar className="h-3 w-3 text-blue-400" />
-              {activeFilter === 'today' ? 'Jogos de Hoje' : 
+              {activeFilter === 'today' ? 'Jogos do Dia' : 
                activeFilter === 'live' ? 'Jogos ao Vivo' :
-               activeFilter === 'upcoming' ? 'Próximos Jogos' : 'Jogos'}
+               activeFilter === 'upcoming' ? 'Próximos Jogos' : 'Jogos do Dia'}
               <Badge variant="secondary" className="text-xs h-4">{filteredFixtures.length}</Badge>
             </CardTitle>
           </CardHeader>
@@ -182,21 +182,35 @@ export const BetanIAWidgetsEnhanced = () => {
                           <span className="text-xs font-medium truncate">
                             {formatTeamName(fixture.teams.home.name, 12)}
                           </span>
-                          {(fixtureStatus.isFinished || fixtureStatus.isLive) && (
-                            <span className="text-xs font-bold ml-1">
-                              {fixture.goals.home ?? 0}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {(fixtureStatus.isFinished || fixtureStatus.isLive) && (
+                              <span className="text-xs font-bold">
+                                {fixture.goals.home ?? 0}
+                              </span>
+                            )}
+                            {!fixtureStatus.isFinished && (
+                              <span className="text-xs font-semibold text-green-400">
+                                {(Math.random() * 2 + 1).toFixed(2)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium truncate">
                             {formatTeamName(fixture.teams.away.name, 12)}
                           </span>
-                          {(fixtureStatus.isFinished || fixtureStatus.isLive) && (
-                            <span className="text-xs font-bold ml-1">
-                              {fixture.goals.away ?? 0}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {(fixtureStatus.isFinished || fixtureStatus.isLive) && (
+                              <span className="text-xs font-bold">
+                                {fixture.goals.away ?? 0}
+                              </span>
+                            )}
+                            {!fixtureStatus.isFinished && (
+                              <span className="text-xs font-semibold text-green-400">
+                                {(Math.random() * 2 + 1).toFixed(2)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -306,11 +320,11 @@ export const BetanIAWidgetsEnhanced = () => {
                     </div>
                   </div>
                   
-                  <div className="mt-1">
-                    <Progress 
-                      value={player.performance || 75} 
-                      className="h-1 bg-muted/30"
-                    />
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Marcar gol:</span>
+                    <span className="text-xs font-semibold text-green-400">
+                      {(Math.random() * 3 + 1.5).toFixed(2)}
+                    </span>
                   </div>
                 </div>
                 ))}
@@ -360,11 +374,11 @@ export const BetanIAWidgetsEnhanced = () => {
                     </div>
                   </div>
                   
-                  <div className="mt-1">
-                    <Progress 
-                      value={player.performance || 65} 
-                      className="h-1 bg-muted/30"
-                    />
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Levar cartão:</span>
+                    <span className="text-xs font-semibold text-yellow-400">
+                      {(Math.random() * 2 + 2).toFixed(2)}
+                    </span>
                   </div>
                 </div>
                 ))}
@@ -414,11 +428,11 @@ export const BetanIAWidgetsEnhanced = () => {
                     </div>
                   </div>
                   
-                  <div className="mt-1">
-                    <Progress 
-                      value={player.performance || 45} 
-                      className="h-1 bg-muted/30"
-                    />
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Levar cartão:</span>
+                    <span className="text-xs font-semibold text-red-400">
+                      {(Math.random() * 4 + 3).toFixed(2)}
+                    </span>
                   </div>
                 </div>
                 ))}
