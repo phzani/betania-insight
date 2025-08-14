@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Trophy, TrendingUp, Users, Calendar, RefreshCw, Zap, Clock, Star, Target, Award, AlertTriangle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,15 @@ import { useFilterStore } from "@/stores/filterStore";
 import { useWidgetData } from "@/hooks/useLiveSportsData";
 import { getMatchTime, formatTeamName } from "@/hooks/useLiveSportsData";
 import { getFixtureStatus, formatFixtureTime, getLeagueEmoji, BRAZILIAN_LEAGUES } from "@/lib/sportsDataHelpers";
+
+// Bookmakers data
+const BOOKMAKERS = [
+  { name: "Bet365", url: "https://www.bet365.com", color: "text-green-400" },
+  { name: "Betano", url: "https://www.betano.com.br", color: "text-blue-400" },
+  { name: "KTO", url: "https://www.kto.com", color: "text-yellow-400" },
+  { name: "Betfair", url: "https://www.betfair.com.br", color: "text-purple-400" },
+  { name: "Rivalo", url: "https://www.rivalo.com", color: "text-red-400" },
+];
 
 export const BetanIAWidgetsEnhanced = () => {
   const {
@@ -34,6 +43,10 @@ export const BetanIAWidgetsEnhanced = () => {
     favoriteTeams,
     toggleFavoriteTeam
   } = useFilterStore();
+
+  // State for managing bookmaker rotation
+  const [fixtureBookmakers, setFixtureBookmakers] = useState<{[key: string]: number}>({});
+  const [playerBookmakers, setPlayerBookmakers] = useState<{[key: string]: number}>({});
 
   // Get filtered fixtures based on current filters
   const filteredFixtures = getFilteredFixtures();
@@ -72,6 +85,37 @@ export const BetanIAWidgetsEnhanced = () => {
 
   const handleTeamFavorite = (teamName: string) => {
     console.log(`[Widgets] Toggle favorite for: ${teamName}`);
+  };
+
+  // Functions to handle bookmaker rotation
+  const rotateFixtureBookmaker = (fixtureId: string) => {
+    setFixtureBookmakers(prev => ({
+      ...prev,
+      [fixtureId]: ((prev[fixtureId] || 0) + 1) % BOOKMAKERS.length
+    }));
+  };
+
+  const rotatePlayerBookmaker = (playerKey: string) => {
+    setPlayerBookmakers(prev => ({
+      ...prev,
+      [playerKey]: ((prev[playerKey] || 0) + 1) % BOOKMAKERS.length
+    }));
+  };
+
+  const getFixtureBookmaker = (fixtureId: string) => {
+    const index = fixtureBookmakers[fixtureId] || 0;
+    return BOOKMAKERS[index];
+  };
+
+  const getPlayerBookmaker = (playerKey: string) => {
+    const index = playerBookmakers[playerKey] || 0;
+    return BOOKMAKERS[index];
+  };
+
+  const generateOdds = (seed: number, bookmakerIndex: number) => {
+    const base = 1.5 + (seed % 3);
+    const variation = (bookmakerIndex * 0.1) + ((seed % 10) * 0.05);
+    return (base + variation).toFixed(2);
   };
 
   // Enhanced top performers with click actions
@@ -189,9 +233,25 @@ export const BetanIAWidgetsEnhanced = () => {
                               </span>
                             )}
                             {!fixtureStatus.isFinished && (
-                              <span className="text-xs font-semibold text-green-400">
-                                {(Math.random() * 2 + 1).toFixed(2)}
-                              </span>
+                              <div 
+                                className="flex items-center gap-1 cursor-pointer hover:bg-white/[0.05] px-1 rounded"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const bookmaker = getFixtureBookmaker(`${fixture.fixture.id}-home`);
+                                  window.open(bookmaker.url, '_blank');
+                                }}
+                                onDoubleClick={(e) => {
+                                  e.stopPropagation();
+                                  rotateFixtureBookmaker(`${fixture.fixture.id}-home`);
+                                }}
+                              >
+                                <span className={`text-xs font-semibold ${getFixtureBookmaker(`${fixture.fixture.id}-home`).color}`}>
+                                  {generateOdds(fixture.fixture.id + fixture.teams.home.id, fixtureBookmakers[`${fixture.fixture.id}-home`] || 0)}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {getFixtureBookmaker(`${fixture.fixture.id}-home`).name}
+                                </span>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -206,9 +266,25 @@ export const BetanIAWidgetsEnhanced = () => {
                               </span>
                             )}
                             {!fixtureStatus.isFinished && (
-                              <span className="text-xs font-semibold text-green-400">
-                                {(Math.random() * 2 + 1).toFixed(2)}
-                              </span>
+                              <div 
+                                className="flex items-center gap-1 cursor-pointer hover:bg-white/[0.05] px-1 rounded"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const bookmaker = getFixtureBookmaker(`${fixture.fixture.id}-away`);
+                                  window.open(bookmaker.url, '_blank');
+                                }}
+                                onDoubleClick={(e) => {
+                                  e.stopPropagation();
+                                  rotateFixtureBookmaker(`${fixture.fixture.id}-away`);
+                                }}
+                              >
+                                <span className={`text-xs font-semibold ${getFixtureBookmaker(`${fixture.fixture.id}-away`).color}`}>
+                                  {generateOdds(fixture.fixture.id + fixture.teams.away.id, fixtureBookmakers[`${fixture.fixture.id}-away`] || 0)}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {getFixtureBookmaker(`${fixture.fixture.id}-away`).name}
+                                </span>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -322,9 +398,25 @@ export const BetanIAWidgetsEnhanced = () => {
                   
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Marcar gol:</span>
-                    <span className="text-xs font-semibold text-green-400">
-                      {(Math.random() * 3 + 1.5).toFixed(2)}
-                    </span>
+                    <div 
+                      className="flex items-center gap-1 cursor-pointer hover:bg-white/[0.05] px-1 rounded"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const bookmaker = getPlayerBookmaker(`goal-${player.name}`);
+                        window.open(bookmaker.url, '_blank');
+                      }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        rotatePlayerBookmaker(`goal-${player.name}`);
+                      }}
+                    >
+                      <span className={`text-xs font-semibold ${getPlayerBookmaker(`goal-${player.name}`).color}`}>
+                        {generateOdds(player.name.length + index, playerBookmakers[`goal-${player.name}`] || 0)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {getPlayerBookmaker(`goal-${player.name}`).name}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 ))}
@@ -376,9 +468,25 @@ export const BetanIAWidgetsEnhanced = () => {
                   
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Levar cartão:</span>
-                    <span className="text-xs font-semibold text-yellow-400">
-                      {(Math.random() * 2 + 2).toFixed(2)}
-                    </span>
+                    <div 
+                      className="flex items-center gap-1 cursor-pointer hover:bg-white/[0.05] px-1 rounded"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const bookmaker = getPlayerBookmaker(`yellow-${player.name}`);
+                        window.open(bookmaker.url, '_blank');
+                      }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        rotatePlayerBookmaker(`yellow-${player.name}`);
+                      }}
+                    >
+                      <span className={`text-xs font-semibold ${getPlayerBookmaker(`yellow-${player.name}`).color}`}>
+                        {generateOdds(player.name.length + index + 10, playerBookmakers[`yellow-${player.name}`] || 0)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {getPlayerBookmaker(`yellow-${player.name}`).name}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 ))}
@@ -430,9 +538,25 @@ export const BetanIAWidgetsEnhanced = () => {
                   
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Levar cartão:</span>
-                    <span className="text-xs font-semibold text-red-400">
-                      {(Math.random() * 4 + 3).toFixed(2)}
-                    </span>
+                    <div 
+                      className="flex items-center gap-1 cursor-pointer hover:bg-white/[0.05] px-1 rounded"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const bookmaker = getPlayerBookmaker(`red-${player.name}`);
+                        window.open(bookmaker.url, '_blank');
+                      }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        rotatePlayerBookmaker(`red-${player.name}`);
+                      }}
+                    >
+                      <span className={`text-xs font-semibold ${getPlayerBookmaker(`red-${player.name}`).color}`}>
+                        {generateOdds(player.name.length + index + 20, playerBookmakers[`red-${player.name}`] || 0)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {getPlayerBookmaker(`red-${player.name}`).name}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 ))}
