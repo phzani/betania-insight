@@ -1,8 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BetanIASidebar } from "./BetanIASidebar";
 import { BetanIAChat } from "./BetanIAChat";
 import { BetanIAWidgetsEnhanced } from "./BetanIAWidgetsEnhanced";
 import { BetanIAHeader } from "./BetanIAHeader";
+import { DebugDashboard } from "./DebugDashboard";
+import { LazyWidget } from "./LazyWidget";
 import { useFilterStore } from "@/stores/filterStore";
 import { useSportsDataV2 } from "@/hooks/useSportsDataV2";
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -10,6 +12,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 export const BetanIALayout = () => {
   const { updateData } = useFilterStore();
   const sportsData = useSportsDataV2();
+  const [showDebug, setShowDebug] = useState(false);
 
   // Update filter store when sports data changes
   useEffect(() => {
@@ -37,11 +40,16 @@ export const BetanIALayout = () => {
         
         {/* Right Widgets Panel */}
         <aside className="w-96 flex-shrink-0 border-l border-border/50 bg-card/50">
-          <ErrorBoundary>
-            <BetanIAWidgetsEnhanced />
-          </ErrorBoundary>
+          <LazyWidget priority="high">
+            <ErrorBoundary>
+              <BetanIAWidgetsEnhanced />
+            </ErrorBoundary>
+          </LazyWidget>
         </aside>
       </div>
+      
+      {/* Debug Dashboard */}
+      <DebugDashboard isVisible={showDebug} onToggle={() => setShowDebug(!showDebug)} />
     </div>
   );
 };
