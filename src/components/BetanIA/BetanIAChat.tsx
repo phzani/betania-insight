@@ -1,9 +1,8 @@
 import React, { useRef, useEffect } from "react";
-import { Send, RotateCcw, Filter, Target } from "lucide-react";
+import { Send, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { ChatMessage } from "./ChatMessage";
 import { useBetanIAChat } from "@/hooks/useBetanIAChat";
 import { useFilterStore } from "@/stores/filterStore";
@@ -79,90 +78,105 @@ export const BetanIAChat = () => {
     }
   }, [messages]);
 
-  // Generate dynamic quick actions based on filters
-  const getQuickActions = () => {
-    const actions = [];
-    
-    // Default actions
-    if (!activeFilter) {
-      actions.push({ label: "Próximos jogos", message: "Próximos jogos do Palmeiras" });
-      actions.push({ label: "Jogos hoje", message: "Jogos de hoje" });
-      actions.push({ label: "Libertadores", message: "Libertadores 2025" });
+  // Generate contextual placeholder text based on active filters
+  const getContextualPlaceholder = () => {
+    if (selectedTeam && selectedLeague) {
+      const leagueName = selectedLeague === 71 ? 'Brasileirão' : 
+                        selectedLeague === 72 ? 'Série B' :
+                        selectedLeague === 73 ? 'Copa do Brasil' : 'Libertadores';
+      return `Pergunte sobre o time no ${leagueName}...`;
     }
     
-    // Filter-specific actions
+    if (selectedTeam) {
+      return "Pergunte sobre estatísticas, próximos jogos do time...";
+    }
+    
+    if (selectedLeague) {
+      const leagueName = selectedLeague === 71 ? 'Brasileirão' : 
+                        selectedLeague === 72 ? 'Série B' :
+                        selectedLeague === 73 ? 'Copa do Brasil' : 'Libertadores';
+      return `Pergunte sobre ${leagueName}, tabela, artilheiros...`;
+    }
+    
     if (activeFilter === 'today') {
-      actions.push({ label: "Análise dos jogos", message: "Analise os jogos de hoje" });
-      actions.push({ label: "Melhores odds", message: "Melhores odds para hoje" });
+      return "Pergunte sobre jogos de hoje, odds, análises...";
     }
     
     if (activeFilter === 'live') {
-      actions.push({ label: "Jogos ao vivo", message: "Estatísticas dos jogos ao vivo" });
-      actions.push({ label: "Resultados", message: "Resultados em tempo real" });
+      return "Pergunte sobre jogos ao vivo, estatísticas em tempo real...";
     }
     
-    // Team-specific actions
-    if (selectedTeam) {
-      actions.push({ label: "Estatísticas", message: "Estatísticas do time selecionado" });
-      actions.push({ label: "Próximo jogo", message: "Próximo jogo do time" });
+    if (activeFilter === 'upcoming') {
+      return "Pergunte sobre próximos jogos, palpites, odds...";
     }
     
-    // League-specific actions  
-    if (selectedLeague === 71) {
-      actions.push({ label: "Brasileirão", message: "Tabela do Brasileirão 2025" });
-    } else if (selectedLeague === 13) {
-      actions.push({ label: "Libertadores", message: "Jogos da Libertadores" });
-    }
-    
-    return actions.slice(0, 3); // Limit to 3 actions
+    return "Pergunte sobre jogos, times, odds, estatísticas...";
   };
 
-  const quickActions = getQuickActions();
+  // Generate smart quick actions based on active filters
+  const getSmartQuickActions = () => {
+    const actions = [];
+    
+    // Actions based on selected team and league
+    if (selectedTeam && selectedLeague) {
+      actions.push({ label: "Próximo jogo", message: "Quando é o próximo jogo do time?" });
+      actions.push({ label: "Posição na tabela", message: "Qual a posição do time na tabela?" });
+      actions.push({ label: "Estatísticas", message: "Estatísticas do time na temporada" });
+      return actions;
+    }
+    
+    // Actions based on selected team only
+    if (selectedTeam) {
+      actions.push({ label: "Próximos jogos", message: "Próximos jogos do time" });
+      actions.push({ label: "Estatísticas", message: "Estatísticas do time" });
+      actions.push({ label: "Elenco", message: "Elenco e artilheiros do time" });
+      return actions;
+    }
+    
+    // Actions based on selected league
+    if (selectedLeague) {
+      const leagueName = selectedLeague === 71 ? 'Brasileirão' : 
+                        selectedLeague === 72 ? 'Série B' :
+                        selectedLeague === 73 ? 'Copa do Brasil' : 'Libertadores';
+      actions.push({ label: "Tabela", message: `Tabela do ${leagueName}` });
+      actions.push({ label: "Artilheiros", message: `Artilheiros do ${leagueName}` });
+      actions.push({ label: "Próximos jogos", message: `Próximos jogos do ${leagueName}` });
+      return actions;
+    }
+    
+    // Actions based on active filter
+    if (activeFilter === 'today') {
+      actions.push({ label: "Jogos hoje", message: "Análise dos jogos de hoje" });
+      actions.push({ label: "Melhores odds", message: "Melhores odds para hoje" });
+      actions.push({ label: "Palpites", message: "Palpites para os jogos de hoje" });
+      return actions;
+    }
+    
+    if (activeFilter === 'live') {
+      actions.push({ label: "Ao vivo", message: "Estatísticas dos jogos ao vivo" });
+      actions.push({ label: "Resultados", message: "Resultados em tempo real" });
+      actions.push({ label: "Gols", message: "Últimos gols marcados" });
+      return actions;
+    }
+    
+    if (activeFilter === 'upcoming') {
+      actions.push({ label: "Próximos", message: "Análise dos próximos jogos" });
+      actions.push({ label: "Odds", message: "Melhores odds para apostar" });
+      actions.push({ label: "Palpites", message: "Palpites para os próximos jogos" });
+      return actions;
+    }
+    
+    // Default actions when no filters are active
+    actions.push({ label: "Jogos hoje", message: "Jogos de hoje" });
+    actions.push({ label: "Ao vivo", message: "Jogos ao vivo" });
+    actions.push({ label: "Artilheiros", message: "Artilheiros do Brasileirão" });
+    return actions;
+  };
+
+  const smartQuickActions = getSmartQuickActions();
 
   return (
     <div className="flex flex-col h-full relative">
-      {/* Filter Status Bar */}
-      {(activeFilter || selectedTeam || selectedLeague) && (
-        <div className="px-6 py-3 bg-blue-500/10 border-b border-blue-500/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Filter className="h-3 w-3 text-blue-400" />
-              <span className="text-xs text-blue-400">Filtros ativos:</span>
-              
-              {activeFilter && (
-                <Badge variant="secondary" className="text-xs bg-blue-500/20 text-blue-300">
-                  {activeFilter === 'today' ? 'Hoje' : 
-                   activeFilter === 'live' ? 'Ao Vivo' : 'Próximos'}
-                </Badge>
-              )}
-              
-              {selectedLeague && (
-                <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-300">
-                  {selectedLeague === 71 ? 'Série A' :
-                   selectedLeague === 72 ? 'Série B' :
-                   selectedLeague === 73 ? 'Copa BR' : 'Libertadores'}
-                </Badge>
-              )}
-              
-              {selectedTeam && (
-                <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-300">
-                  <Target className="h-2 w-2 mr-1" />
-                  Time específico
-                </Badge>
-              )}
-            </div>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearAllFilters}
-              className="text-xs h-6 text-blue-400 hover:text-blue-300"
-            >
-              Limpar
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Chat Messages */}
       <ScrollArea className="flex-1 p-6">
@@ -216,12 +230,7 @@ export const BetanIAChat = () => {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder={
-                activeFilter 
-                  ? `Pergunte sobre ${activeFilter === 'today' ? 'jogos de hoje' : 
-                                     activeFilter === 'live' ? 'jogos ao vivo' : 'próximos jogos'}...`
-                  : "Pergunte sobre jogos, times, odds..."
-              }
+              placeholder={getContextualPlaceholder()}
               className="betania-glass border-0 bg-white/[0.02] placeholder:text-muted-foreground/70 pr-12"
               disabled={isLoading}
             />
@@ -236,35 +245,20 @@ export const BetanIAChat = () => {
           </div>
         </div>
         
-        {/* Quick Actions - Simplified */}
+        {/* Smart Quick Actions */}
         <div className="flex flex-wrap gap-2 mt-3">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="betania-glass border-0 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => handleQuickAction("Jogos de hoje")}
-            disabled={isLoading}
-          >
-            Jogos hoje
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="betania-glass border-0 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => handleQuickAction("Jogos ao vivo")}
-            disabled={isLoading}
-          >
-            Ao vivo
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="betania-glass border-0 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => handleQuickAction("Artilheiros")}
-            disabled={isLoading}
-          >
-            Artilheiros
-          </Button>
+          {smartQuickActions.map((action, index) => (
+            <Button 
+              key={index}
+              variant="ghost" 
+              size="sm" 
+              className="betania-glass border-0 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => handleQuickAction(action.message)}
+              disabled={isLoading}
+            >
+              {action.label}
+            </Button>
+          ))}
         </div>
       </div>
     </div>
