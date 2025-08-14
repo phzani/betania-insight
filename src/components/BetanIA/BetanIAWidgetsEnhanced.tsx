@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Trophy, TrendingUp, Users, Calendar, RefreshCw, Zap, Clock, Star, Target, Award, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshButton } from "./RefreshButton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -379,11 +380,19 @@ export const BetanIAWidgetsEnhanced = () => {
         {/* Top Scorers - Compact Widget */}
         <Card className="betania-glass">
           <CardHeader className="p-3 pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
-              <Trophy className="h-3 w-3 text-blue-400" />
-              Artilheiros - {getLeagueName(selectedLeague)}
-              <Badge variant="secondary" className="text-xs h-4">{enhancedPerformers.length}</Badge>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                <Trophy className="h-3 w-3 text-blue-400" />
+                Artilheiros - {getLeagueName(selectedLeague)}
+                <Badge variant="secondary" className="text-xs h-4">{enhancedPerformers.length}</Badge>
+              </CardTitle>
+              <RefreshButton 
+                onRefresh={refresh} 
+                loading={loading} 
+                lastUpdate={lastUpdate}
+                className="h-5 w-5"
+              />
+            </div>
           </CardHeader>
           <CardContent className="p-3 pt-0">
             <ScrollArea className="h-40 w-full">
@@ -454,11 +463,19 @@ export const BetanIAWidgetsEnhanced = () => {
         {/* Top Yellow Cards - Compact Widget */}
         <Card className="betania-glass">
           <CardHeader className="p-3 pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
-              <AlertTriangle className="h-3 w-3 text-yellow-400" />
-              Cartões Amarelos - {getLeagueName(selectedLeague)}
-              <Badge variant="secondary" className="text-xs h-4">{topYellowCards.length}</Badge>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                <AlertTriangle className="h-3 w-3 text-yellow-400" />
+                Cartões Amarelos - {getLeagueName(selectedLeague)}
+                <Badge variant="secondary" className="text-xs h-4">{topYellowCards.length}</Badge>
+              </CardTitle>
+              <RefreshButton 
+                onRefresh={refresh} 
+                loading={loading} 
+                lastUpdate={lastUpdate}
+                className="h-5 w-5"
+              />
+            </div>
           </CardHeader>
           <CardContent className="p-3 pt-0">
             <ScrollArea className="h-40 w-full">
@@ -527,11 +544,19 @@ export const BetanIAWidgetsEnhanced = () => {
         {/* Top Red Cards - Compact Widget */}
         <Card className="betania-glass">
           <CardHeader className="p-3 pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
-              <Award className="h-3 w-3 text-red-400" />
-              Cartões Vermelhos - {getLeagueName(selectedLeague)}
-              <Badge variant="secondary" className="text-xs h-4">{topRedCards.length}</Badge>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                <Award className="h-3 w-3 text-red-400" />
+                Cartões Vermelhos - {getLeagueName(selectedLeague)}
+                <Badge variant="secondary" className="text-xs h-4">{topRedCards.length}</Badge>
+              </CardTitle>
+              <RefreshButton 
+                onRefresh={refresh} 
+                loading={loading} 
+                lastUpdate={lastUpdate}
+                className="h-5 w-5"
+              />
+            </div>
           </CardHeader>
           <CardContent className="p-3 pt-0">
             <ScrollArea className="h-40 w-full">

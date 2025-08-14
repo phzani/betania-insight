@@ -18,6 +18,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper functions for smart caching
+function isToday(): boolean {
+  const now = new Date();
+  const hour = now.getHours();
+  // Consider it "match day" if it's between 12pm and 11pm
+  return hour >= 12 && hour <= 23;
+}
+
+function hasActiveMatches(): boolean {
+  // During football season months (Feb-Dec) assume there might be active matches
+  const month = new Date().getMonth() + 1;
+  return month >= 2 && month <= 12;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -110,19 +124,21 @@ serve(async (req) => {
       case 'topscorers':
         apiUrl = 'https://v3.football.api-sports.io/players/topscorers';
         cacheKey = `topscorers_${JSON.stringify(params)}`;
-        cacheDuration = 3600; // 1 hour
+        // Smart caching: 5 minutes during match days, 15 minutes otherwise
+        const isMatchDay = isToday() && hasActiveMatches();
+        cacheDuration = isMatchDay ? 300 : 900; // 5 or 15 minutes
         break;
 
       case 'topyellowcards':
         apiUrl = 'https://v3.football.api-sports.io/players/topyellowcards';
         cacheKey = `topyellowcards_${JSON.stringify(params)}`;
-        cacheDuration = 3600; // 1 hour
+        cacheDuration = isMatchDay ? 300 : 900; // 5 or 15 minutes
         break;
 
       case 'topredcards':
         apiUrl = 'https://v3.football.api-sports.io/players/topredcards';
         cacheKey = `topredcards_${JSON.stringify(params)}`;
-        cacheDuration = 3600; // 1 hour
+        cacheDuration = isMatchDay ? 300 : 900; // 5 or 15 minutes
         break;
 
       case 'odds-bookmakers':
@@ -158,7 +174,9 @@ serve(async (req) => {
           meta: {
             cached: true,
             endpoint,
-            params
+            params,
+            lastUpdate: cachedData.created_at || cachedData.updated_at,
+            cacheExpiry: cachedData.expires_at
           }
         }),
         {
@@ -236,6 +254,8 @@ serve(async (req) => {
           endpoint,
           params,
           results: apiData.results,
+          lastUpdate: new Date().toISOString(),
+          cacheExpiry: expiresAt.toISOString(),
           rateLimit: {
             remaining: remaining ? parseInt(remaining) : null,
             limit: limit ? parseInt(limit) : null

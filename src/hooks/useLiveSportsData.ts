@@ -66,7 +66,8 @@ export function useLiveSportsData(): UseLiveSportsDataResult {
       console.log(`[LiveSportsData] Starting data fetch for league: ${currentLeague}...`);
 
       const today = new Date().toISOString().split('T')[0];
-      const currentSeason = new Date().getFullYear();
+      // Use 2024 season for current data since 2025 hasn't started yet
+      const currentSeason = 2024;
 
       // Helper to call Edge Function with GET
       const callApi = (p: Record<string, any>) => {
