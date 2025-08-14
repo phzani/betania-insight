@@ -1,24 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSmartCache, CACHE_CONFIGS } from './useSmartCache';
-import { useSystemMonitor } from './useSystemMonitor';
-import { useDebounce, useBatchedRequests } from './usePerformanceOptimizations';
-import { useFilterStore } from '@/stores/filterStore';
-import { getCurrentSeason, shouldUseFallback } from '@/lib/seasonHelpers';
 import { useToast } from '@/hooks/use-toast';
+import { useFilterStore } from '@/stores/filterStore';
+import { getCurrentSeason } from '@/lib/seasonHelpers';
 import { 
   Fixture, 
-  League, 
-  Team, 
-  Odds,
-  TopPerformer,
-  LiveGame,
-  HotOdd
+  TopPerformer
 } from '@/types/sports';
 import { 
   validateSportsData, 
-  BRAZILIAN_LEAGUES,
-  processOddsData,
-  convertFixturesToLiveGames
+  BRAZILIAN_LEAGUES
 } from '@/lib/sportsDataHelpers';
 
 const SUPABASE_URL = 'https://skeauyjradscjgfebkqa.supabase.co';
@@ -26,9 +16,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 interface DataState {
   fixtures: Fixture[];
-  leagues: League[];
-  teams: Team[];
-  odds: Odds[];
   topScorers: TopPerformer[];
   topYellowCards: TopPerformer[];
   topRedCards: TopPerformer[];
@@ -40,9 +27,7 @@ interface DataState {
 
 interface UseSportsDataV2Result extends DataState {
   refresh: () => Promise<void>;
-  liveGames: LiveGame[];
   todayFixtures: Fixture[];
-  hotOdds: HotOdd[];
   healthStatus: {
     cacheHitRate: number;
     lastSuccessfulFetch: Date | null;
@@ -51,17 +36,11 @@ interface UseSportsDataV2Result extends DataState {
 }
 
 export function useSportsDataV2(): UseSportsDataV2Result {
-  const { cache } = useSmartCache();
-  const { recordApiCall, recordCacheHit } = useSystemMonitor();
-  const { addToBatch } = useBatchedRequests();
   const { toast } = useToast();
   const { selectedLeague } = useFilterStore();
   
   const [state, setState] = useState<DataState>({
     fixtures: [],
-    leagues: [],
-    teams: [],
-    odds: [],
     topScorers: [],
     topYellowCards: [],
     topRedCards: [],
@@ -83,114 +62,43 @@ export function useSportsDataV2(): UseSportsDataV2Result {
     return getCurrentSeason(league);
   }, [selectedLeague]);
 
-  // Enhanced API call with intelligent caching, monitoring and batching
-  const callApiSmart = useCallback(async (endpoint: string, params: Record<string, any> = {}) => {
-    const cacheKey = `${endpoint}_${JSON.stringify(params)}`;
-    const startTime = performance.now();
-    
-    // Try cache first
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      recordCacheHit();
-      console.log(`[SportsDataV2] Cache hit for ${endpoint}`, params);
-      return { data: cached, fromCache: true };
-    }
-
+  // Enhanced API call
+  const callApiSports = useCallback(async (endpoint: string, params: Record<string, any> = {}) => {
     try {
       console.log(`[SportsDataV2] API call for ${endpoint}`, params);
       
-      // Use batched requests for better performance
-      const result = await addToBatch(endpoint, params);
+      const searchParams = new URLSearchParams({
+        endpoint,
+        ...params
+      });
+
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/api-sports?${searchParams.toString()}`, {
+        method: 'GET',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'content-type': 'application/json'
+        }
+      });
       
-      const responseTime = performance.now() - startTime;
-      recordApiCall(responseTime, true, false);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
       
       if (!result.ok) {
         throw new Error(result.error?.message || `API error for ${endpoint}`);
       }
 
       const validatedData = validateSportsData(result.data || []);
-      
-      // Cache the result based on endpoint type
-      const config = getCacheConfig(endpoint);
-      if (config) {
-        cache.set(cacheKey, validatedData, config);
-      }
-
       return { data: validatedData, fromCache: false };
       
     } catch (error) {
-      const responseTime = performance.now() - startTime;
-      recordApiCall(responseTime, false, false);
-      
       console.error(`[SportsDataV2] API error for ${endpoint}:`, error);
-      
-      // Show toast for critical errors
-      if (endpoint === 'topscorers' || endpoint === 'fixtures') {
-        toast({
-          title: "Erro na API",
-          description: `Falha ao carregar ${endpoint}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
-          variant: "destructive"
-        });
-      }
-      
-      // For critical endpoints, try fallback season
-      if (['topscorers', 'topyellowcards', 'topredcards'].includes(endpoint) && params.season) {
-        const fallbackParams = { ...params, season: seasonConfig.fallback };
-        const fallbackCacheKey = `${endpoint}_${JSON.stringify(fallbackParams)}`;
-        
-        console.log(`[SportsDataV2] Trying fallback season for ${endpoint}`, fallbackParams);
-        
-        try {
-          // Check cache for fallback first
-          const fallbackCached = cache.get(fallbackCacheKey);
-          if (fallbackCached) {
-            recordCacheHit();
-            return { data: fallbackCached, fromCache: true, fallback: true };
-          }
-
-          // Make fallback API call
-          const fallbackResult = await addToBatch(endpoint, fallbackParams);
-          
-          if (fallbackResult.ok) {
-            const fallbackData = validateSportsData(fallbackResult.data || []);
-            const config = getCacheConfig(endpoint);
-            if (config) {
-              cache.set(fallbackCacheKey, fallbackData, config);
-            }
-            
-            console.log(`[SportsDataV2] Fallback success for ${endpoint}`);
-            return { data: fallbackData, fromCache: false, fallback: true };
-          }
-        } catch (fallbackError) {
-          console.error(`[SportsDataV2] Fallback also failed for ${endpoint}:`, fallbackError);
-        }
-      }
-
       throw error;
     }
-  }, [cache, seasonConfig, addToBatch, recordApiCall, recordCacheHit, toast]);
-
-  // Get cache configuration for endpoint
-  const getCacheConfig = (endpoint: string) => {
-    switch (endpoint) {
-      case 'fixtures':
-        return CACHE_CONFIGS.TODAY_FIXTURES;
-      case 'leagues':
-        return CACHE_CONFIGS.LEAGUES;
-      case 'teams':
-        return CACHE_CONFIGS.TEAMS;
-      case 'odds-pre':
-        return CACHE_CONFIGS.ODDS_PRE;
-      case 'topscorers':
-        return CACHE_CONFIGS.TOP_SCORERS;
-      case 'topyellowcards':
-      case 'topredcards':
-        return CACHE_CONFIGS.TOP_CARDS;
-      default:
-        return null;
-    }
-  };
+  }, []);
 
   // Process top performers data
   const processTopPerformers = useCallback((rawData: any[], type: 'goals' | 'yellow' | 'red'): TopPerformer[] => {
@@ -225,7 +133,7 @@ export function useSportsDataV2(): UseSportsDataV2Result {
     });
   }, []);
 
-  // Main data fetching function with performance optimizations
+  // Main data fetching function
   const fetchAllData = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
@@ -235,64 +143,36 @@ export function useSportsDataV2(): UseSportsDataV2Result {
       
       console.log(`[SportsDataV2] Fetching data for league: ${currentLeague}, season: ${seasonConfig.current}`);
 
-      // Execute parallel requests with smart caching and batching
-      const [
-        todayFixtures,
-        liveFixtures,
-        leagues,
-        odds,
-        teams,
-        topScorers,
-        topYellowCards,
-        topRedCards
-      ] = await Promise.allSettled([
-        callApiSmart('fixtures', { date: today, league: currentLeague, season: seasonConfig.current }),
-        callApiSmart('fixtures', { live: 'all', league: currentLeague, season: seasonConfig.current }),
-        callApiSmart('leagues', { country: 'Brazil' }),
-        callApiSmart('odds-pre', { league: currentLeague, season: seasonConfig.current }),
-        callApiSmart('teams', { league: currentLeague, season: seasonConfig.current }),
-        callApiSmart('topscorers', { league: currentLeague, season: seasonConfig.current }),
-        callApiSmart('topyellowcards', { league: currentLeague, season: seasonConfig.current }),
-        callApiSmart('topredcards', { league: currentLeague, season: seasonConfig.current })
-      ]);
+      // Fetch data sequentially to avoid overwhelming the API
+      const todayFixtures = await callApiSports('fixtures', { 
+        date: today, 
+        league: currentLeague, 
+        season: seasonConfig.current 
+      });
 
-      // Process results
-      const processResult = (result: PromiseSettledResult<any>) => {
-        if (result.status === 'fulfilled') {
-          return result.value.data;
-        }
-        console.warn('[SportsDataV2] Request failed:', result.reason);
-        return [];
-      };
+      const topScorers = await callApiSports('topscorers', { 
+        league: currentLeague, 
+        season: seasonConfig.current 
+      });
 
-      const todayFixturesData = processResult(todayFixtures) as Fixture[];
-      const liveFixturesData = processResult(liveFixtures) as Fixture[];
-      const leaguesData = processResult(leagues) as League[];
-      const oddsData = processResult(odds) as Odds[];
-      const teamsData = processResult(teams) as Team[];
-      const topScorersRaw = processResult(topScorers);
-      const topYellowCardsRaw = processResult(topYellowCards);
-      const topRedCardsRaw = processResult(topRedCards);
+      const topYellowCards = await callApiSports('topyellowcards', { 
+        league: currentLeague, 
+        season: seasonConfig.current 
+      });
 
-      // Combine fixtures and remove duplicates
-      const allFixtures = [...todayFixturesData];
-      liveFixturesData.forEach(liveFixture => {
-        if (!allFixtures.find(f => f.fixture.id === liveFixture.fixture.id)) {
-          allFixtures.push(liveFixture);
-        }
+      const topRedCards = await callApiSports('topredcards', { 
+        league: currentLeague, 
+        season: seasonConfig.current 
       });
 
       // Process top performers
-      const processedTopScorers = processTopPerformers(topScorersRaw, 'goals');
-      const processedTopYellowCards = processTopPerformers(topYellowCardsRaw, 'yellow');
-      const processedTopRedCards = processTopPerformers(topRedCardsRaw, 'red');
+      const processedTopScorers = processTopPerformers(topScorers.data, 'goals');
+      const processedTopYellowCards = processTopPerformers(topYellowCards.data, 'yellow');
+      const processedTopRedCards = processTopPerformers(topRedCards.data, 'red');
 
       setState(prev => ({
         ...prev,
-        fixtures: allFixtures,
-        leagues: leaguesData,
-        teams: teamsData,
-        odds: oddsData,
+        fixtures: todayFixtures.data as Fixture[],
         topScorers: processedTopScorers,
         topYellowCards: processedTopYellowCards,
         topRedCards: processedTopRedCards,
@@ -333,72 +213,37 @@ export function useSportsDataV2(): UseSportsDataV2Result {
       }));
 
       console.error('[SportsDataV2] Data fetch failed:', errorMessage);
+      
+      toast({
+        title: "Erro ao Carregar Dados",
+        description: `Falha ao carregar informações: ${errorMessage}`,
+        variant: "destructive"
+      });
     }
-  }, [selectedLeague, seasonConfig, callApiSmart, processTopPerformers, state.refreshing, toast]);
-
-  // Debounced data fetching to prevent excessive API calls
-  const debouncedFetchAllData = useDebounce(fetchAllData, 1000, {
-    leading: false,
-    trailing: true,
-    maxWait: 3000
-  });
+  }, [selectedLeague, seasonConfig, callApiSports, processTopPerformers, state.refreshing, toast]);
 
   // Manual refresh function
   const refresh = useCallback(async () => {
     setState(prev => ({ ...prev, refreshing: true }));
-    
-    // Invalidate relevant cache entries
-    cache.invalidatePattern(`fixtures_.*league.*${selectedLeague || BRAZILIAN_LEAGUES.SERIE_A}`);
-    cache.invalidatePattern(`topscorers_.*league.*${selectedLeague || BRAZILIAN_LEAGUES.SERIE_A}`);
-    cache.invalidatePattern(`topyellowcards_.*league.*${selectedLeague || BRAZILIAN_LEAGUES.SERIE_A}`);
-    cache.invalidatePattern(`topredcards_.*league.*${selectedLeague || BRAZILIAN_LEAGUES.SERIE_A}`);
-    
     await fetchAllData();
     setState(prev => ({ ...prev, refreshing: false }));
-  }, [fetchAllData, cache, selectedLeague]);
+  }, [fetchAllData]);
 
   // Initial load and league change
   useEffect(() => {
-    debouncedFetchAllData();
-  }, [debouncedFetchAllData]);
-
-  // Auto-refresh for live data
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Only auto-refresh if we have successful data and no current error
-      if (state.lastUpdate && !state.error && !state.loading) {
-        console.log('[SportsDataV2] Auto-refresh triggered');
-        fetchAllData();
-      }
-    }, 60 * 1000); // Every minute
-
-    return () => clearInterval(interval);
-  }, [fetchAllData, state.lastUpdate, state.error, state.loading]);
+    fetchAllData();
+  }, [selectedLeague, seasonConfig.current]);
 
   // Computed values
-  const liveGames = useMemo(
-    () => convertFixturesToLiveGames(state.fixtures.filter(f => 
-      !selectedLeague || f.league.id === selectedLeague
-    )),
-    [state.fixtures, selectedLeague]
-  );
-
   const todayFixtures = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     return state.fixtures.filter(f => f.fixture.date.startsWith(today));
   }, [state.fixtures]);
 
-  const hotOdds = useMemo(
-    () => processOddsData(state.odds, state.fixtures),
-    [state.odds, state.fixtures]
-  );
-
   return {
     ...state,
     refresh,
-    liveGames,
     todayFixtures,
-    hotOdds,
     healthStatus
   };
 }
