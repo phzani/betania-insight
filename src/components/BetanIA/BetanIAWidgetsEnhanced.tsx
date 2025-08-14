@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useFilterStore } from "@/stores/filterStore";
-import { useWidgetData } from "@/hooks/useLiveSportsData";
+import { useSportsDataV2 } from "@/hooks/useSportsDataV2";
+import { ErrorDisplay } from "./ErrorBoundary";
 import { getMatchTime, formatTeamName } from "@/hooks/useLiveSportsData";
 import { getFixtureStatus, formatFixtureTime, getLeagueEmoji, BRAZILIAN_LEAGUES } from "@/lib/sportsDataHelpers";
 
@@ -26,15 +27,17 @@ export const BetanIAWidgetsEnhanced = () => {
     liveGames,
     todayFixtures,
     hotOdds,
-    topPerformers,
+    topScorers,
     topYellowCards,
     topRedCards,
     odds,
     loading,
     error,
     lastUpdate,
-    refresh
-  } = useWidgetData();
+    refresh,
+    healthStatus,
+    refreshing
+  } = useSportsDataV2();
 
   const {
     getFilteredFixtures,
@@ -131,7 +134,7 @@ export const BetanIAWidgetsEnhanced = () => {
   };
 
   // Enhanced top performers with click actions
-  const enhancedPerformers = topPerformers.map((performer, index) => ({
+  const enhancedPerformers = topScorers.map((performer, index) => ({
     ...performer,
     position: index + 1,
     isTeamSelected: selectedTeam && performer.team === 'Palmeiras' ? selectedTeam === 119 : false
@@ -157,40 +160,43 @@ export const BetanIAWidgetsEnhanced = () => {
             >
               {getLeagueName(selectedLeague)}
             </Badge>
-            <span className="text-xs text-muted-foreground">
-              {lastUpdate ? formatFixtureTime(lastUpdate.toISOString()) : '-'}
-            </span>
+            <div className="flex items-center gap-1 text-xs">
+              <span className="text-muted-foreground">
+                {lastUpdate ? formatFixtureTime(lastUpdate.toISOString()) : '-'}
+              </span>
+              {healthStatus.cacheHitRate > 0 && (
+                <Badge 
+                  variant="outline" 
+                  className="text-xs h-4 bg-green-500/10 border-green-500/30 text-green-400"
+                >
+                  {(healthStatus.cacheHitRate * 100).toFixed(0)}% cache
+                </Badge>
+              )}
+            </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleRefresh}
-              disabled={loading}
+              disabled={loading || refreshing}
               className="h-6 w-6 p-0 hover:bg-white/[0.08]"
             >
-              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3 w-3 ${loading || refreshing ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </div>
       </div>
 
       <div className="flex-1 grid grid-cols-1 gap-3 p-4 overflow-hidden">
-        {/* Error State */}
+        {/* Enhanced Error State */}
         {error && (
-          <Card className="betania-glass border-red-500/30 bg-red-500/10 h-16">
-            <CardContent className="p-2">
-              <div className="text-xs text-red-400">
-                ⚠️ {error}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleRefresh}
-                className="mt-1 text-xs h-5 text-red-400 hover:text-red-300"
-              >
-                Tentar novamente
-              </Button>
-            </CardContent>
-          </Card>
+          <ErrorDisplay
+            error={error}
+            loading={loading || refreshing}
+            onRetry={handleRefresh}
+            lastUpdate={healthStatus.lastSuccessfulFetch}
+            type={error.includes('fetch') ? 'network' : error.includes('api') ? 'api' : 'data'}
+            showDetails={false}
+          />
         )}
 
         {/* Today's Fixtures - Compact Widget */}

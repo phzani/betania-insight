@@ -18,18 +18,51 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper functions for smart caching
-function isToday(): boolean {
+// Enhanced helper functions for smart caching
+function isMatchDay(): boolean {
   const now = new Date();
   const hour = now.getHours();
-  // Consider it "match day" if it's between 12pm and 11pm
-  return hour >= 12 && hour <= 23;
+  const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+  
+  // More matches on weekends and evenings
+  const isWeekend = day === 0 || day === 6;
+  const isEvening = hour >= 15 && hour <= 23;
+  
+  return isWeekend || isEvening;
 }
 
 function hasActiveMatches(): boolean {
-  // During football season months (Feb-Dec) assume there might be active matches
-  const month = new Date().getMonth() + 1;
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1-12
   return month >= 2 && month <= 12;
+}
+
+function getSeasonForLeague(leagueId: string): { current: string; fallback: string } {
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  
+  // Brazilian leagues (calendar year)
+  const brazilianLeagues = ['71', '72', '73', '74', '75']; // Serie A, B, C, D, Copa do Brasil
+  
+  if (brazilianLeagues.includes(leagueId)) {
+    return {
+      current: currentYear.toString(),
+      fallback: (currentYear - 1).toString()
+    };
+  }
+  
+  // European leagues (span years)
+  if (currentMonth >= 8) {
+    return {
+      current: currentYear.toString(),
+      fallback: (currentYear - 1).toString()
+    };
+  } else {
+    return {
+      current: (currentYear - 1).toString(),
+      fallback: (currentYear - 2).toString()
+    };
+  }
 }
 
 serve(async (req) => {
@@ -125,7 +158,7 @@ serve(async (req) => {
       case 'topyellowcards':  
       case 'topredcards':
         // Smart caching: 5 minutes during match days, 15 minutes otherwise
-        const isMatchDay = isToday() && hasActiveMatches();
+        const isActiveMatchDay = isMatchDay() && hasActiveMatches();
         
         if (endpoint === 'topscorers') {
           apiUrl = 'https://v3.football.api-sports.io/players/topscorers';
@@ -138,7 +171,7 @@ serve(async (req) => {
           cacheKey = `topredcards_${JSON.stringify(params)}`;
         }
         
-        cacheDuration = isMatchDay ? 300 : 900; // 5 or 15 minutes
+        cacheDuration = isActiveMatchDay ? 300 : 900; // 5 or 15 minutes
         break;
 
       case 'odds-bookmakers':
@@ -238,14 +271,15 @@ serve(async (req) => {
       };
     };
 
-    // For season-based endpoints, try fallback if primary season has no data
+    // Enhanced fallback logic for season-based endpoints
     const seasonEndpoints = ['topscorers', 'topyellowcards', 'topredcards'];
     let finalResult;
     let usedFallback = false;
 
     if (seasonEndpoints.includes(endpoint) && params.season) {
+      const leagueId = params.league?.toString() || '71';
+      const { fallback: fallbackSeason } = getSeasonForLeague(leagueId);
       const primarySeason = params.season;
-      const fallbackSeason = String(parseInt(primarySeason) - 1);
       
       // Try primary season first
       const primaryResult = await makeApiCall(params, cacheKey);
@@ -253,7 +287,7 @@ serve(async (req) => {
       // If no data with primary season and it's different from fallback, try fallback
       if (primaryResult.data && Array.isArray(primaryResult.data) && 
           primaryResult.data.length === 0 && fallbackSeason !== primarySeason) {
-        console.log(`[API-Sports] No data for season ${primarySeason}, trying fallback ${fallbackSeason}`);
+        console.log(`[API-Sports] No data for season ${primarySeason}, trying intelligent fallback ${fallbackSeason}`);
         
         const fallbackParams = { ...params, season: fallbackSeason };
         const fallbackCacheKey = `${endpoint}_${JSON.stringify(fallbackParams)}`;
@@ -262,7 +296,7 @@ serve(async (req) => {
           const fallbackResult = await makeApiCall(fallbackParams, fallbackCacheKey);
           
           if (fallbackResult.data && Array.isArray(fallbackResult.data) && fallbackResult.data.length > 0) {
-            console.log(`[API-Sports] Using fallback season ${fallbackSeason} data`);
+            console.log(`[API-Sports] Using intelligent fallback season ${fallbackSeason} data`);
             finalResult = fallbackResult;
             usedFallback = true;
           } else {
@@ -294,7 +328,7 @@ serve(async (req) => {
           cacheExpiry: finalResult.cached ? finalResult.meta?.cacheExpiry : new Date(Date.now() + cacheDuration * 1000).toISOString(),
           rateLimit: finalResult.rateLimit,
           usedFallback: usedFallback,
-          season: usedFallback ? String(parseInt(params.season) - 1) : params.season
+          season: usedFallback ? getSeasonForLeague(params.league?.toString() || '71').fallback : params.season
         }
       }),
       {

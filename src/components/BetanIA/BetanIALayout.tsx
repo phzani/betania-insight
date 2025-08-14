@@ -4,11 +4,12 @@ import { BetanIAChat } from "./BetanIAChat";
 import { BetanIAWidgetsEnhanced } from "./BetanIAWidgetsEnhanced";
 import { BetanIAHeader } from "./BetanIAHeader";
 import { useFilterStore } from "@/stores/filterStore";
-import { useLiveSportsData } from "@/hooks/useLiveSportsData";
+import { useSportsDataV2 } from "@/hooks/useSportsDataV2";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 export const BetanIALayout = () => {
   const { updateData } = useFilterStore();
-  const sportsData = useLiveSportsData();
+  const sportsData = useSportsDataV2();
 
   // Update filter store when sports data changes
   useEffect(() => {
@@ -36,7 +37,9 @@ export const BetanIALayout = () => {
         
         {/* Right Widgets Panel */}
         <aside className="w-96 flex-shrink-0 border-l border-border/50 bg-card/50">
-          <BetanIAWidgetsEnhanced />
+          <ErrorBoundary>
+            <BetanIAWidgetsEnhanced />
+          </ErrorBoundary>
         </aside>
       </div>
     </div>
