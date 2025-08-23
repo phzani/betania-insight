@@ -329,23 +329,56 @@ export const BetanIAWidgetsEnhanced = () => {
           </CardContent>
         </Card>
 
-        {/* Standings Table - Compact Widget */}
+        {/* Hot Odds - Compact Widget */}
         <Card className="betania-glass">
           <CardHeader className="p-3 pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
-              <Trophy className="h-3 w-3 text-yellow-400" />
-              Tabela - {getLeagueName(selectedLeague)}
-              <Badge variant="secondary" className="text-xs h-4">20</Badge>
+              <TrendingUp className="h-3 w-3 text-yellow-400" />
+              Odds em Movimento
+              <Badge variant="secondary" className="text-xs h-4">{hotOdds.length}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3 pt-0">
             <ScrollArea className="h-32 w-full">
               <div className="space-y-1 pr-2">
-                <div className="text-center py-4">
-                  <div className="text-xs text-muted-foreground">
-                    Carregando tabela da competição...
+                {hotOdds.slice(0, 6).map((odd, index) => (
+                  <div 
+                    key={index} 
+                    onClick={() => handleGameClick(odd.fixtureId)}
+                    className="bg-white/[0.02] hover:bg-white/[0.04] p-2 rounded cursor-pointer transition-all"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium truncate flex-1">
+                        {odd.match}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-bold">
+                          {odd.odds.toFixed(2)}
+                        </span>
+                        <div className={`text-xs ${
+                          odd.trend === 'up' ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {odd.trend === 'up' ? '↗' : '↘'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground truncate flex-1">
+                        {odd.market}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {odd.bookmaker}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                ))}
+                {hotOdds.length === 0 && (
+                  <div className="text-center py-2">
+                    <div className="text-xs text-muted-foreground">
+                      Sem odds em movimento
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollArea>
           </CardContent>
