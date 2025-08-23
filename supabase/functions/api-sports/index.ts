@@ -38,11 +38,31 @@ function hasActiveMatches(): boolean {
 }
 
 function getSeasonForLeague(leagueId: string): { current: string; fallback: string } {
-  // Brazilian leagues always use current year, fallback to previous year
-  return {
-    current: '2024',
-    fallback: '2023'
-  };
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  
+  // Brazilian leagues (calendar year)
+  const brazilianLeagues = ['71', '72', '73', '74', '75']; // Serie A, B, C, D, Copa do Brasil
+  
+  if (brazilianLeagues.includes(leagueId)) {
+    return {
+      current: currentYear.toString(),
+      fallback: (currentYear - 1).toString()
+    };
+  }
+  
+  // European leagues (span years)
+  if (currentMonth >= 8) {
+    return {
+      current: currentYear.toString(),
+      fallback: (currentYear - 1).toString()
+    };
+  } else {
+    return {
+      current: (currentYear - 1).toString(),
+      fallback: (currentYear - 2).toString()
+    };
+  }
 }
 
 serve(async (req) => {

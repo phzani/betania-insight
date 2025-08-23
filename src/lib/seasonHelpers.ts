@@ -47,10 +47,10 @@ export function getCurrentSeason(leagueId: number): SeasonConfig {
   }
   
   if (config.type === 'calendar') {
-    // Brazilian leagues - using 2024 data as it's more available
+    // Brazilian leagues follow calendar year
     return {
-      current: 2024,
-      fallback: 2023
+      current: currentYear,
+      fallback: currentYear - 1
     };
   }
   
