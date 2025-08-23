@@ -148,10 +148,10 @@ serve(async (req) => {
         cacheDuration = 900; // 15 minutes
         break;
 
-      case 'odds-live':
-        apiUrl = 'https://v3.football.api-sports.io/odds/live';
-        cacheKey = `odds_live_${JSON.stringify(params)}`;
-        cacheDuration = 30; // 30 seconds
+      case 'standings':
+        apiUrl = 'https://v3.football.api-sports.io/standings';
+        cacheKey = `standings_${JSON.stringify(params)}`;
+        cacheDuration = 900; // 15 minutes
         break;
 
       case 'topscorers':
@@ -174,17 +174,6 @@ serve(async (req) => {
         cacheDuration = isActiveMatchDay ? 300 : 900; // 5 or 15 minutes
         break;
 
-      case 'odds-bookmakers':
-        apiUrl = 'https://v3.football.api-sports.io/odds/bookmakers';
-        cacheKey = `odds_bookmakers_${JSON.stringify(params)}`;
-        cacheDuration = 86400; // 24 hours
-        break;
-
-      case 'odds-bets':
-        apiUrl = 'https://v3.football.api-sports.io/odds/bets';
-        cacheKey = `odds_bets_${JSON.stringify(params)}`;
-        cacheDuration = 86400; // 24 hours
-        break;
 
       default:
         throw new Error(`Unknown endpoint: ${endpoint}`);
